@@ -1,0 +1,12 @@
+# VSCode related files
+.vscode
+
+# Bazel related files
+bazel-*
+
+# Clangd related files
+.cache
+.clangd
+
+# MacOS related files
+.DS_Store

@@ -1,0 +1,20 @@
+build:clang --crosstool_top=//:clang_suite
+build:clang --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+
+build:gcc --crosstool_top=//:gcc_suite
+build:gcc --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+
+build:asan -c dbg
+build:asan --copt=-fsanitize=address
+build:asan --copt=-fno-sanitize-blacklist
+build:asan --linkopt=-fsanitize=address
+
+build:tsan -c dbg
+build:tsan --copt=-fsanitize=thread
+build:tsan --copt=-fno-sanitize-blacklist
+build:tsan --linkopt=-fsanitize=thread
+
+build:xray --copt=-fxray-instrument
+build:xray --linkopt=-fxray-instrument
+
+build --config=gcc

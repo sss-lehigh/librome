@@ -10,3 +10,6 @@ bazel-*
 
 # MacOS related files
 .DS_Store
+
+# Other
+compile_commands.json

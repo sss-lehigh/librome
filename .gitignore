@@ -8,8 +8,14 @@ bazel-*
 .cache
 .clangd
 
+# Python relate files
+__pycache__
+
 # MacOS related files
 .DS_Store
 
 # Other
 compile_commands.json
+
+# Third party packages and libraries
+third-party/*/

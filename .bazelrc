@@ -17,4 +17,4 @@ build:tsan --linkopt=-fsanitize=thread
 build:xray --copt=-fxray-instrument
 build:xray --linkopt=-fxray-instrument
 
-build --config=gcc
+build --config=clang

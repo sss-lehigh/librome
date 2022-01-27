@@ -35,7 +35,7 @@ all_cpp_actions = [
 
 common_compile_flags = [
     "-std=c++20",
-    # "-Wall",
+    "-Wall",
 ]
 
 common_dbg_flags = [
@@ -144,6 +144,7 @@ def _clang_impl(ctx):
                     flag_groups = ([
                         flag_group(
                             flags = common_compile_flags + [
+                                "-stdlib=libc++",
                             ],
                         ),
                     ]),

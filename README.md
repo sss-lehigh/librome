@@ -34,3 +34,33 @@ Using a `QpsController` is helpful to determine max throughput by ramping up the
 
 For more details and examples of how to use this portion of the project, take a peek at the code and tests in `rome/colosseum`.
 The name of the folder is tounge-in-cheek, but the Colosseum was where gladiators put their abilities to the test so it felt suitable.
+
+# Setup instructions
+The Dockerfile contains all the dependencies required by this project and handles automatically setting up the correct development environment.
+There are enough comments in the Dockerfile itself to understand what is going on, but at a high level its main purpose is to install the tooling necessary to build the project.
+The manually installed packages include (see `Dockerfile` for details):
+* Golang
+* Bazel 
+* GCC and Clang compilers w/ C++20 support
+* Miniconda
+
+Together, these form the basis for my typical C++ development environment, building projects with Bazel and using Python for scripting.
+Golang is included because it is the easiest way to install Bazel and its build tools.
+
+## VirtualBox (host=MacOS, guest=Ubuntu)
+First, set up a shared folder in the settings to point to the project directory on the host.
+For illustration purposes, let's assume that location to be `/home/dev/rome` and the name of the shared folder to be `rome`.
+Next, in the `/etc/fstab` file on the guest OS, run the following command:
+`echo -e "\n# Added for VBox\nrome /mnt/rome vboxsf defaults,uid=$(id -u) 0 1" | sudo tee -a /etc/fstab 1> /dev/null`.
+At startup, the machine will mount the shared folder called `rome` at the mount point `/mnt/rome` on the guest.
+To allow a user to write to the mounted directory, we must also provide a users ID to the `uid` option so that the owner of the mount point is that particular user.
+Do not forget to add port forwarding so that we can connect to the machine over `ssh` (needed for VSCode)
+
+## UTM (host=MacOS, guest=Ubuntu)
+Similar to VirtualBox, UTM provides a hypervisor for VMs running on MacOS.
+The benefit of running UTM is that it is ammenable to Apple silicon.
+The user interface is also much nicer, in my opinion.
+Generally, the setup is basically the same except that the filesystem type is `davfs`.
+This requires that you first install the `davfs2` 
+
+## Docker

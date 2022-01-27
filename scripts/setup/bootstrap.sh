@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ ${PWD##*/} != "scripts" ]]; then
-  echo "$0: Please rerun from the setup subdirectory"
+  echo "$0: Please rerun from the scripts subdirectory"
   exit 1
 fi
 

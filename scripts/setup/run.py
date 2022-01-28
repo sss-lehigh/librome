@@ -2,6 +2,7 @@ import mlnx_ofed
 import zookeeper
 import apt
 import go
+import bazel
 import conda
 import pprof
 import pathlib
@@ -21,8 +22,8 @@ def main(args):
             resources.append(apt.APTPackages(config))
         elif r == 'golang':
             resources.append(go.Golang(config))
-        elif r == 'go':
-            resources.append(go.GoPackages(config))
+        elif r == 'bazel':
+            resources.append(bazel.Bazel(config))
         elif r == 'conda':
             resources.append(conda.Conda(config))
         elif r == 'zookeeper':

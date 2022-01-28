@@ -65,19 +65,18 @@ def checked_call(cmd):
     subprocess.run(cmd, shell=True, check=True)
 
 
-def build_marker(path):
-    return "  # <!-- " + path + " -->"
+def __check_bashrc(line):
+    return subprocess.run("cat ~/.bashrc | grep -q '" + line + "'", shell=True).returncode == 0
 
 
-def __add_path(path):
-    checked_call("echo \"export PATH=\$PATH:" + path + build_marker(path) +
-                 "\" >>~/.bashrc")
-
-
-def __check_path(path):
-    return subprocess.run("cat ~/.bashrc | grep -q '" + build_marker(path) + "'", shell=True).returncode == 0
+def __add_bashrc(line):
+    checked_call("echo '" + line + "'  >>~/.bashrc")
 
 
 def try_add_path(path):
-    if not __check_path(path):
-        __add_path(path)
+    if not __check_bashrc(path):
+        __add_bashrc('export PATH=$PATH:' + path)
+
+def try_add_bashrc(line):
+    if not __check_bashrc(line):
+        checked_call("echo '" + line + "' >>~/.bashrc")

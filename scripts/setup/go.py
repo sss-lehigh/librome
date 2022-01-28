@@ -31,4 +31,5 @@ class GoPackages(__Resource__):
     def setup(self):
         for p in self.packages:
             subprocess.run(["go", "install", p])
+        try_add_path("\$(go env GOROOT)/bin")
         

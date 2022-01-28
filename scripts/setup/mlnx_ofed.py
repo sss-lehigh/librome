@@ -1,8 +1,8 @@
-from resources import Archive
+from resources import HostedArchive
 import os
 
 
-class MlnxOfed(Archive):
+class MlnxOfed(HostedArchive):
     ofed = None
 
     def __init__(self, config):
@@ -13,7 +13,7 @@ class MlnxOfed(Archive):
         pass
 
     def setup_mlx5(self):
-        path = os.path.join(self.dest, self.name, self.archive_name)
+        path = os.path.join(self.dest_dir, self.name, self.hosted_name)
         os.system(
             f"cd {path} && sudo ./mlnxofedinstall --without-fw-update --force --without-neohost-backend")
 

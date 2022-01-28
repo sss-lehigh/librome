@@ -1,6 +1,6 @@
-from resources import Archive
+from resources import HostedArchive
 
 
-class Zookeeeper(Archive):
+class Zookeeeper(HostedArchive):
     def __init__(self, config):
         super().__init__(config, "zookeeper")

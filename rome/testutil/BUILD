@@ -3,7 +3,11 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "status_matcher",
     hdrs = ["status_matcher.h"],
-    deps = ["@gtest"],
+    deps = [
+        "@absl//absl/status",
+        "@absl//absl/status:statusor",
+        "@gtest",
+    ],
 )
 
 cc_library(

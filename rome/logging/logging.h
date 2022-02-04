@@ -10,10 +10,6 @@
 #define CRITICAL 5
 #define OFF 6
 
-#ifndef ROME_LOG_LEVEL
-#define ROME_LOG_LEVEL DEBUG
-#endif
-
 //! Must be set before including `spdlog/spdlog.h`
 #define SPDLOG_ACTIVE_LEVEL ROME_LOG_LEVEL
 
@@ -25,12 +21,20 @@ inline void __rome_init_log__() {
   ::spdlog::init_thread_pool(8192, 1);
   static_assert(ROME_LOG_LEVEL < spdlog::level::level_enum::n_levels,
                 "Invalid logging level.");
+#if defined(ROME_ASYNC_LOG)
   std::shared_ptr<spdlog::logger> __rome_log__ =
       ::spdlog::create_async<::spdlog::sinks::stdout_color_sink_mt>("rome");
+#else
+  std::shared_ptr<spdlog::logger> __rome_log__ =
+      ::spdlog::create<::spdlog::sinks::stdout_color_sink_mt>("rome");
+#endif
   __rome_log__->set_level(
       static_cast<spdlog::level::level_enum>(ROME_LOG_LEVEL));
   __rome_log__->set_pattern("[%Y-%m-%d %H:%M%S thread:%t] [%^%l%$] [%@] %v");
   ::spdlog::set_default_logger(std::move(__rome_log__));
+  SPDLOG_INFO(
+      "Logging level: {}",
+      ::spdlog::level::level_string_views[::spdlog::default_logger()->level()]);
 }
 
 #if ROME_LOG_LEVEL == OFF
@@ -104,15 +108,20 @@ inline void __rome_init_log__() {
     SPDLOG_ERROR(__VA_ARGS__);           \
     return ret_func();                   \
   }
-#define ROME_CHECK_OK(ret_func, status, ...) \
-  if (!(status.ok())) {                      \
-    SPDLOG_ERROR(__VA_ARGS__);               \
-    return ret_funct();                      \
+#define ROME_CHECK_OK(ret_func, status) \
+  if (!(status.ok())) {                 \
+    SPDLOG_ERROR(status.message());     \
+    return ret_func();                  \
   }
-#define ROME_ASSERT_OK(status)      \
-  if (!(status.ok())) {             \
-    SPDLOG_ERROR(status.message()); \
-    exit(1);                        \
+#define ROME_ASSERT(check, ...)   \
+  if (!(check)) {                 \
+    SPDLOG_CRITICAL(__VA_ARGS__); \
+    exit(1);                      \
+  }
+#define ROME_ASSERT_OK(status)         \
+  if (!(status.ok())) {                \
+    SPDLOG_CRITICAL(status.message()); \
+    exit(1);                           \
   }
 
 // Specific checks for debugging. Can be turned off by commenting out

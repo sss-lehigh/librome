@@ -1,3 +1,4 @@
+from unittest import skip
 import mlnx_ofed
 import zookeeper
 import apt
@@ -5,19 +6,24 @@ import go
 import bazel
 import conda
 import pprof
-import pathlib
-import sys
 import argparse
+from util import *
 
-curr_path = pathlib.Path(__file__).absolute()
-sys.path.append(str(curr_path.parent.parent))
-from util import *  # nopep8
+SUPPORTED = ['apt', 'golang', 'bazel', 'conda', 'zookeeper', 'pprof', 'mlnx_ofed']
 
 
 def main(args):
-    check_dir()
+    init(args.config)
+
+    # Ask the user for the root directory of the project if the configured one does not exist.
+    if not os.path.isdir(config["workspace"]["root"]):
+        root = input("Enter the project root directory: ")
+        config["workspace"]["root"] = root
+
     resources = []
-    for r in args.resources:
+    if len(args.resources) == 1 and args.resources[0] == 'all':
+        args.resources = SUPPORTED
+    for r in [x for x in args.resources if x not in args.skip]:
         if r == 'apt':
             resources.append(apt.APTPackages(config))
         elif r == 'golang':
@@ -45,6 +51,12 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Do environment setup")
     parser.add_argument(
+        '--config', metavar='C', type=str, nargs=1,
+        help="Path to configuration (.ini) file")
+    parser.add_argument(
         '--resources', metavar="R", type=str, nargs='+',
         help="Names of resources corresponding to headers in `config.ini` to install")
+    parser.add_argument(
+        '--skip', metavar='S', type=str, nargs='*', default='', 
+        help='Names of resources to skip during setup')
     main(parser.parse_args())

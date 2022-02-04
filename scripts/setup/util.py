@@ -5,8 +5,11 @@ import shutil
 import hashlib
 
 config = configparser.ConfigParser(
-    interpolation=configparser.ExtendedInterpolation())
-config.read("config.ini")
+        interpolation=configparser.ExtendedInterpolation())
+
+
+def init(configfile):
+    config.read(configfile)
 
 
 class ValidationError(Exception):
@@ -52,7 +55,6 @@ def rm(path):
     os.remove(path)
 
 
-
 def check_dir():
     cwd = os.getcwd()
     expected = os.path.join(config["workspace"]["root"], "scripts")
@@ -66,7 +68,8 @@ def checked_call(cmd):
 
 
 def __check_bashrc(line):
-    return subprocess.run("cat ~/.bashrc | grep -q '" + line + "'", shell=True).returncode == 0
+    return subprocess.run(
+        "cat ~/.bashrc | grep -q '" + line + "'", shell=True).returncode == 0
 
 
 def __add_bashrc(line):
@@ -76,6 +79,7 @@ def __add_bashrc(line):
 def try_add_path(path):
     if not __check_bashrc(path):
         __add_bashrc('export PATH=$PATH:' + path)
+
 
 def try_add_bashrc(line):
     if not __check_bashrc(line):

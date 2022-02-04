@@ -21,6 +21,8 @@ class __Resource__(ABC):
 
 
 class HostedResource(__Resource__):
+    """ A hosted resource is one that is available at some remote location. This class takes care of downloading it and validating its checksum.
+    """
     name = None
     hosted_name = None
     resource = None
@@ -54,6 +56,8 @@ class HostedResource(__Resource__):
 
 
 class HostedArchive(HostedResource):
+    """A hosted archive is like a hosted resource except that it is a compressed archive and must be unpacked (e.g., zip). This class extends `HostedResource` and calls the base class `setup()` method to obtain the resource, then it unpacks the archive and removes the original compressed file.
+    """
     def __init__(self, config, section_name):
         super().__init__(config, section_name)
 

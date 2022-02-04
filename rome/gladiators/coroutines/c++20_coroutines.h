@@ -70,6 +70,12 @@ struct SyncTask {
     ~promise_type() { *done = true; }
 
     SyncTask get_return_object() { return SyncTask(done); }
+
+    // Since we return `suspend_never` the coroutine is immediately executed.
+    // Meaning, that the first call will suspend at `co_await`. If this was
+    // instead `suspend_always`, then the coroutine would not run at first but
+    // execution would be returned to the caller. The latter is helpful for
+    // lazily evaluated coroutines, whereas the first is for eager ones.
     rome::coroutine::suspend_never initial_suspend() { return {}; }
     rome::coroutine::suspend_never final_suspend() noexcept { return {}; }
     void return_void() {}

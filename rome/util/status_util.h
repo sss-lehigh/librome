@@ -31,5 +31,11 @@ class StatusBuilder {
 using UnavailableErrorBuilder = StatusBuilder<absl::StatusCode::kUnavailable>;
 using CancelledErrorBuilder = StatusBuilder<absl::StatusCode::kCancelled>;
 using NotFoundErrorBuilder = StatusBuilder<absl::StatusCode::kNotFound>;
+using UnknownErrorBuilder = StatusBuilder<absl::StatusCode::kUnknown>;
+using AlreadyExistsErrorBuilder =
+    StatusBuilder<absl::StatusCode::kAlreadyExists>;
+using FailedPreconditionErrorBuilder =
+    StatusBuilder<absl::StatusCode::kFailedPrecondition>;
+using InternalErrorBuilder = StatusBuilder<absl::StatusCode::kInternal>;
 
 }  // namespace rome

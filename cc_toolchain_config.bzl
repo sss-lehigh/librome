@@ -34,8 +34,9 @@ all_cpp_actions = [
 ]
 
 common_compile_flags = [
-    "-std=c++20",
+    "-xc++",
     "-Wall",
+    "-std=c++20",
 ]
 
 common_dbg_flags = [
@@ -45,6 +46,7 @@ common_dbg_flags = [
 ]
 
 common_linker_flags = [
+    "-lstdc++",
     "-lm",
 ]
 
@@ -63,7 +65,7 @@ def _clang_impl(ctx):
     tool_paths = [
         tool_path(
             name = "gcc",
-            path = "/usr/bin/clang++",
+            path = "/usr/bin/clang",
         ),
         tool_path(
             name = "ld",
@@ -75,23 +77,23 @@ def _clang_impl(ctx):
         ),
         tool_path(
             name = "cpp",
-            path = "/bin/false",
+            path = "/usr/bin/clang++",
         ),
         tool_path(
             name = "gcov",
-            path = "/bin/false",
+            path = "/usr/bin/gcov",
         ),
         tool_path(
             name = "nm",
-            path = "/bin/false",
+            path = "/usr/bin/nm",
         ),
         tool_path(
             name = "objdump",
-            path = "/bin/false",
+            path = "/usr/bin/objdump",
         ),
         tool_path(
             name = "strip",
-            path = "/bin/false",
+            path = "/usr/bin/strip",
         ),
     ]
 
@@ -157,8 +159,8 @@ def _clang_impl(ctx):
         ctx = ctx,
         features = features,
         cxx_builtin_include_directories = [
-	    "/usr/lib/llvm-12/lib/clang/12.0.0/include",
-	    "/usr/lib/llvm-12/include",
+            "/usr/lib/llvm-12/lib/clang/12.0.0/include",
+            "/usr/lib/llvm-12/include",
             "/usr/include",
         ],
         toolchain_identifier = "local",
@@ -182,7 +184,7 @@ def _gcc_impl(ctx):
     tool_paths = [
         tool_path(
             name = "gcc",
-            path = "/usr/bin/g++",
+            path = "/usr/bin/gcc",
         ),
         tool_path(
             name = "ld",
@@ -269,7 +271,7 @@ def _gcc_impl(ctx):
                     ],
                     flag_groups = ([
                         flag_group(
-                            flags = common_compile_flags + gcc_compile_flags 
+                            flags = common_compile_flags + gcc_compile_flags,
                         ),
                     ]),
                 ),

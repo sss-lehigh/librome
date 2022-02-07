@@ -110,7 +110,7 @@ inline void __rome_init_log__() {
   }
 #define ROME_CHECK_OK(ret_func, status) \
   if (!(status.ok())) {                 \
-    SPDLOG_ERROR(status.message());     \
+    SPDLOG_ERROR(status.ToString());     \
     return ret_func();                  \
   }
 #define ROME_ASSERT(check, ...)   \
@@ -118,10 +118,10 @@ inline void __rome_init_log__() {
     SPDLOG_CRITICAL(__VA_ARGS__); \
     exit(1);                      \
   }
-#define ROME_ASSERT_OK(status)         \
-  if (!(status.ok())) {                \
-    SPDLOG_CRITICAL(status.message()); \
-    exit(1);                           \
+#define ROME_ASSERT_OK(status)          \
+  if (!(status.ok())) {                 \
+    SPDLOG_CRITICAL(status.ToString()); \
+    exit(1);                            \
   }
 
 // Specific checks for debugging. Can be turned off by commenting out

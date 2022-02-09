@@ -55,7 +55,21 @@ cc_test(
 cc_library(
     name = "coroutine",
     hdrs = ["coroutine.h"],
-    deps = [],
+    deps = [
+        "@absl//absl/status",
+        "@rome//rome/logging",
+    ],
+)
+
+cc_test(
+    name = "coroutine_test",
+    srcs = ["coroutine_test.cc"],
+    deps = [
+        ":coroutine",
+        "@absl//absl/status",
+        "@gtest//:gtest_main",
+        "@rome//rome/logging",
+    ],
 )
 
 cc_library(

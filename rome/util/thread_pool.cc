@@ -4,7 +4,7 @@
 
 #include "rome/logging/logging.h"
 
-namespace rome {
+namespace util {
 
 namespace {
 constexpr std::chrono::nanoseconds kInitialBackoff(100);
@@ -70,4 +70,4 @@ void ThreadPool::RunThread() LOCKS_EXCLUDED(mu_) {
   }
 }
 
-}  // namespace rome
+}  // namespace util

@@ -8,12 +8,12 @@
 #include "gtest/gtest.h"
 #include "rome/logging/logging.h"
 
+namespace util {
 namespace {
-using namespace ::rome::coroutine;
 
 struct next {
   bool await_ready() { return false; }
-  bool await_suspend(Task::handler_type h) { return true; }
+  bool await_suspend(Coro::handler_type h) { return true; }
   void await_resume() {}
 };
 
@@ -22,14 +22,14 @@ constexpr int kNumTasks = 4;
 // A task adds the value associated with its `task_num` and iteration count.
 // This way, we can check after the run that all expected values corresponding
 // to a round-robin execution are present.
-Task task(int task_num, std::vector<int>* out) {
+Coro task(int task_num, std::vector<int>* out) {
   for (int i = 0; i < kNumTasks; ++i) {
     out->push_back(task_num + (i * kNumTasks));
     co_await suspend_always{};
   }
 }
 
-Task cancellable_task(const Cancelation& canceled) {
+Coro cancellable_task(const Cancelation& canceled) {
   while (!canceled) {
     co_await suspend_always{};
   }
@@ -69,3 +69,4 @@ TEST(RoundRobinSchedulerTest, CancelsTasks) {
 }
 
 }  // namespace
+}  // namespace util

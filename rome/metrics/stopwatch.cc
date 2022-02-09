@@ -8,6 +8,8 @@
 #include <sstream>
 #include <streambuf>
 
+#include "rome/logging/logging.h"
+
 namespace rome::metrics {
 
 namespace {
@@ -17,7 +19,7 @@ constexpr char kTscFreqKhzFilePath[] =
     "/sys/devices/system/cpu/cpu0/tsc_freq_khz";
 constexpr char kMaxFreqFilePath[] =
     "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
-constexpr int kDefaultCpuFreqKhz = 2100000;
+constexpr int kDefaultCpuFreqKhz = 2300000;
 
 inline uint64_t RdtscpAcquire() {
   uint32_t lo, hi;
@@ -48,21 +50,23 @@ inline uint64_t RdtscpRelease() {
   std::ifstream file;
   file.open(kTscFreqKhzFilePath);
   if (file.is_open()) {
-    std::cerr << "Loading tsc_freq from tsc_freq_khz" << std::endl;
+    ROME_INFO("Loading tsc_freq from tsc_freq_khz");
     file >> tsc_freq_khz;
   } else {
     file.clear();
     file.open(kMaxFreqFilePath);
     if (file.is_open()) {
-      std::cerr << "Loading tsc_freq from max_cpu_freq" << std::endl;
+      ROME_INFO("Loading tsc_freq from max_cpu_freq");
       file >> tsc_freq_khz;
     } else {
-      std::cerr << "Could not load CPU frequency! Using compile time value: "
-                << kDefaultCpuFreqKhz << " KHz" << std::endl;
+      ROME_WARN(
+          "Could not determine CPU frequency. Using compile time value: {} KHz "
+          "[RESULTS MAY BE INACCURATE]",
+          kDefaultCpuFreqKhz);
       tsc_freq_khz = kDefaultCpuFreqKhz;
     }
   }
-  std::cerr << "Using tsc_freq: " << tsc_freq_khz << std::endl;
+  ROME_INFO("Using tsc_freq: {}", tsc_freq_khz);
   return std::unique_ptr<Stopwatch>(new Stopwatch(name, tsc_freq_khz));
 }
 

@@ -29,6 +29,7 @@ cc_library(
     name = "qps_controller",
     hdrs = ["qps_controller.h"],
     deps = [
+        "//rome/testutil:fake_clock",
         "//rome/util:clocks",
         "//rome/util:duration_util",
         "@absl//absl/synchronization",

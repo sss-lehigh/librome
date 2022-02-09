@@ -7,14 +7,14 @@
 #include "rome/logging/logging.h"
 #include "rome/util/thread_pool.h"
 
-using ::rome::ThreadPool;
+using ::util::ThreadPool;
 
 class RequestHandler {
  public:
   RequestHandler() = default;
 
  protected:
-  RequestHandler(std::string_view id, rome::ThreadPool* pool)
+  RequestHandler(std::string_view id, ThreadPool* pool)
       : id_(id), pool_(pool), step_(Step::kFirst) {}
 
   enum class Step {

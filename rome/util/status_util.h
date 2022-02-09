@@ -5,7 +5,7 @@
 
 #include "absl/status/status.h"
 
-namespace rome {
+namespace util {
 
 template <absl::StatusCode ErrorCode>
 class StatusBuilder {

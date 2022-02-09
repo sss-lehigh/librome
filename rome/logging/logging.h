@@ -18,16 +18,19 @@
 #include "spdlog/spdlog.h"
 
 inline void __rome_init_log__() {
-  ::spdlog::init_thread_pool(8192, 1);
+  auto __rome_log__ = ::spdlog::get("rome");
+  if (!__rome_log__) {
+#if defined(ROME_ASYNC_LOG)
+    ::spdlog::init_thread_pool(8192, 1);
+    __rome_log__ =
+        ::spdlog::create_async<::spdlog::sinks::stdout_color_sink_mt>("rome");
+#else
+    __rome_log__ =
+        ::spdlog::create<::spdlog::sinks::stdout_color_sink_mt>("rome");
+#endif
+  }
   static_assert(ROME_LOG_LEVEL < spdlog::level::level_enum::n_levels,
                 "Invalid logging level.");
-#if defined(ROME_ASYNC_LOG)
-  std::shared_ptr<spdlog::logger> __rome_log__ =
-      ::spdlog::create_async<::spdlog::sinks::stdout_color_sink_mt>("rome");
-#else
-  std::shared_ptr<spdlog::logger> __rome_log__ =
-      ::spdlog::create<::spdlog::sinks::stdout_color_sink_mt>("rome");
-#endif
   __rome_log__->set_level(
       static_cast<spdlog::level::level_enum>(ROME_LOG_LEVEL));
   __rome_log__->set_pattern("[%Y-%m-%d %H:%M%S thread:%t] [%^%l%$] [%@] %v");
@@ -110,7 +113,7 @@ inline void __rome_init_log__() {
   }
 #define ROME_CHECK_OK(ret_func, status) \
   if (!(status.ok())) {                 \
-    SPDLOG_ERROR(status.ToString());     \
+    SPDLOG_ERROR(status.ToString());    \
     return ret_func();                  \
   }
 #define ROME_ASSERT(check, ...)   \

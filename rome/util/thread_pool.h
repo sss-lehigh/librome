@@ -9,7 +9,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 
-namespace rome {
+namespace util {
 
 using Task = std::pair<std::string, std::function<void()>>;
 
@@ -36,4 +36,4 @@ class ThreadPool {
   std::deque<Task> tasks_ GUARDED_BY(mu_);
 };
 
-}  // namespace rome
+}  // namespace util

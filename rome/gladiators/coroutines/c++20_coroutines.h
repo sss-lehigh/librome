@@ -6,7 +6,8 @@
 #include "rome/util/coroutine.h"
 #include "rome/util/thread_pool.h"
 
-using ::rome::ThreadPool;
+using ::util::SystemClock;
+using ::util::ThreadPool;
 
 // A std::coroutine consists of three parts, the coroutine itself, an Awaitable
 // object, and a Promise object. The coroutine is anything that uses the `co_*`
@@ -33,7 +34,7 @@ class AwaitableRequestHandler : public RequestHandler {
   // rolling the dice and deciding whether the work is complete. In a real
   // scenario, we could replace the following with more complex logic, like
   // checking whether or not a result is ready.
-  void await_suspend(rome::coroutine::coroutine_handle<> caller) {
+  void await_suspend(util::coroutine_handle<> caller) {
     auto status = pool_->Enqueue(
         {id_ + ":" + ToString(step_), [this, caller]() {
            Handle();
@@ -76,8 +77,8 @@ struct SyncTask {
     // instead `suspend_always`, then the coroutine would not run at first but
     // execution would be returned to the caller. The latter is helpful for
     // lazily evaluated coroutines, whereas the first is for eager ones.
-    rome::coroutine::suspend_never initial_suspend() { return {}; }
-    rome::coroutine::suspend_never final_suspend() noexcept { return {}; }
+    util::suspend_never initial_suspend() { return {}; }
+    util::suspend_never final_suspend() noexcept { return {}; }
     void return_void() {}
     void unhandled_exception() {}
     bool* done;
@@ -91,8 +92,8 @@ struct SyncTask {
   }
 
   absl::Status WaitWithTimeout(std::chrono::nanoseconds durr) {
-    auto start = rome::SystemClock::now();
-    while (!(*done_) && (rome::SystemClock::now() - start < durr))
+    auto start = SystemClock::now();
+    while (!(*done_) && (SystemClock::now() - start < durr))
       ;
     if (!(*done_)) {
       return absl::DeadlineExceededError("Timed out waiting for task");

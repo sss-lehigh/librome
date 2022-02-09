@@ -23,7 +23,7 @@
 
 // http://www.cs.tufts.edu/comp/250RTS/archive/roberto-ierusalimschy/revisiting-coroutines.pdf
 
-using ::rome::ThreadPool;
+using ::util::ThreadPool;
 
 constexpr int kNumCoros = 1000;
 

@@ -15,6 +15,7 @@
 namespace rome {
 
 using ::testutil::StatusIs;
+using ::util::SystemClock;
 
 struct FakeClientOp {
   std::chrono::milliseconds wait;

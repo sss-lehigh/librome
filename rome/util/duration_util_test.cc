@@ -6,7 +6,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-namespace rome::timing {
+namespace util {
 
 TEST(UtilTest, ToDoubleNanosecondsTest) {
   std::chrono::nanoseconds d(1000);
@@ -28,4 +28,4 @@ TEST(UtilTest, ToDoubleSecondsTest) {
   EXPECT_THAT(ToDoubleSeconds(d), testing::DoubleEq(1000.0));
 }
 
-}  // namespace rome::timing
+}  // namespace util

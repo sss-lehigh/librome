@@ -11,11 +11,11 @@
 
 #if defined(__clang__)
 #include <experimental/coroutine>
-namespace rome::coroutine {
+namespace util {
 using namespace std::experimental;
 #elif defined(__GNUC__) || defined(__GNUG__)
 #include <coroutine>
-namespace rome::coroutine {
+namespace util {
 using namespace std;
 #else
 #error "Unknown compiler"
@@ -24,23 +24,23 @@ using namespace std;
 // Forward declaration necessary so that `from_promise()` is defined for our
 // coroutine handle. There may be a cleaner way to accomplish this, but this how
 // its done here, https://en.cppreference.com/w/cpp/language/coroutines.
-class TaskPromise;
+class Promise;
 
 // For our purposes, the return object of a coroutine is just a wrapper for the
 // `promise_type`. Any coroutine that is used with the scheduler must return a
 // `Task`.
-class Task : public coroutine_handle<TaskPromise> {
+class Coro : public coroutine_handle<Promise> {
  public:
-  using promise_type = TaskPromise;
-  using handler_type = coroutine_handle<TaskPromise>;
+  using promise_type = Promise;
+  using handler_type = coroutine_handle<Promise>;
 };
 
 // The promise object of a coroutine dictates behavior when the coroutine first
 // starts, and when it returns. It also can save some state to be queried later.
-class TaskPromise {
+class Promise {
  public:
-  Task get_return_object() {
-    return {coroutine_handle<TaskPromise>::from_promise(*this)};
+  Coro get_return_object() {
+    return {coroutine_handle<Promise>::from_promise(*this)};
   }
 
   suspend_always initial_suspend() { return {}; }
@@ -54,7 +54,7 @@ class TaskPromise {
 class Scheduler {
  public:
   // Adds a new coroutine to the runner to be run with a given policy.
-  virtual void Schedule(Task task) = 0;
+  virtual void Schedule(Coro task) = 0;
 
   // Starts running the coroutines until `Stop()` is called or some other
   // temination condition is reached.
@@ -75,20 +75,20 @@ class RoundRobinScheduler : public Scheduler {
   int task_count() const { return task_count_; }
 
   // Inserts the given task as the next task to run.
-  void Schedule(Task task) override {
+  void Schedule(Coro task) override {
     if (canceled_) return;
-    auto new_task = new TaskWrapper{task, nullptr, nullptr};
+    auto coro = new CoroWrapper{task, nullptr, nullptr};
     if (curr_ == nullptr) {
-      new_task->prev = new_task;
-      new_task->next = new_task;
-      curr_ = new_task;
+      coro->prev = coro;
+      coro->next = coro;
+      curr_ = coro;
       last_ = curr_;
     } else {
-      new_task->prev = last_;
-      new_task->next = last_->next;
-      last_->next->prev = new_task;
-      last_->next = new_task;
-      last_ = new_task;
+      coro->prev = last_;
+      coro->next = last_->next;
+      last_->next->prev = coro;
+      last_->next = coro;
+      last_ = coro;
     }
     ++task_count_;
   }
@@ -142,16 +142,16 @@ class RoundRobinScheduler : public Scheduler {
   const Cancelation& Cancelation() const { return canceled_; }
 
  private:
-  struct TaskWrapper {
-    ~TaskWrapper() { handle.destroy(); }
-    coroutine_handle<TaskPromise> handle;
-    TaskWrapper* prev;
-    TaskWrapper* next;
+  struct CoroWrapper {
+    ~CoroWrapper() { handle.destroy(); }
+    coroutine_handle<Promise> handle;
+    CoroWrapper* prev;
+    CoroWrapper* next;
   };
 
   int task_count_;
-  TaskWrapper* curr_;
-  TaskWrapper* last_;
+  CoroWrapper* curr_;
+  CoroWrapper* last_;
   std::atomic<bool> canceled_;
 };
 

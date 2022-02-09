@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 #include "rome/testutil/status_matcher.h"
 
-namespace rome {
+namespace util {
 namespace {
 
 TEST(StatusUtilTest, BuildsStatus) {
@@ -18,4 +18,4 @@ TEST(StatusUtilTest, BuildsStatus) {
 }
 
 }  // namespace
-}  // namespace rome
+}  // namespace util

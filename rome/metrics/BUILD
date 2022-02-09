@@ -44,6 +44,7 @@ cc_library(
     hdrs = ["stopwatch.h"],
     deps = [
         ":metric",
+        "//rome/logging",
     ],
 )
 

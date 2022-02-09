@@ -15,6 +15,8 @@
 ABSL_FLAG(int, max_qps, -1, "Maximum offered QPS during execution");
 ABSL_FLAG(int, runtime, 5, "Nmber of seconds to run execution for");
 
+using ::util::SystemClock;
+
 struct SimpleOp {
   enum class Type {
     kAdd,
@@ -65,12 +67,11 @@ int main(int argc, char* argv[]) {
           std::move(op_stream), std::move(data_stream));
 
   // Setup qps_controller.
-  std::unique_ptr<rome::LeakyTokenBucketQpsController<rome::SystemClock>>
+  std::unique_ptr<rome::LeakyTokenBucketQpsController<SystemClock>>
       qps_controller;
   if (absl::GetFlag(FLAGS_max_qps) > 0) {
-    qps_controller =
-        rome::LeakyTokenBucketQpsController<rome::SystemClock>::Create(
-            absl::GetFlag(FLAGS_max_qps));
+    qps_controller = rome::LeakyTokenBucketQpsController<SystemClock>::Create(
+        absl::GetFlag(FLAGS_max_qps));
   }
 
   // Create the workload driver.
@@ -78,11 +79,11 @@ int main(int argc, char* argv[]) {
       std::move(client), std::move(mapped_stream), qps_controller.get());
 
   // Start the workload driver.
-  auto start = rome::SystemClock::now();
+  auto start = SystemClock::now();
   auto runtime = std::chrono::seconds(absl::GetFlag(FLAGS_runtime));
   if (!driver->Start().ok()) exit(1);
 
-  while (rome::SystemClock::now() - start < runtime)
+  while (SystemClock::now() - start < runtime)
     ;
   if (!driver->Stop().ok()) exit(1);
 

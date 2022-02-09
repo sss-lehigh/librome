@@ -5,11 +5,15 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "rome/testutil/fake_clock.h"
 #include "rome/util/clocks.h"
 #include "rome/util/duration_util.h"
 
 namespace rome {
 namespace {
+
+using ::testutil::FakeClock;
+using ::util::SteadyClock;
 
 TEST(QpsControllerTest, FakeClockLeakyTokenBucketQpsControllerTest) {
   // Test plan: Create a controller that only allows 100 operations per-second.
@@ -54,7 +58,7 @@ TEST(QpsControllerTest, RealClockLeakyTokenBucketQpsControllerTest) {
     qps_controller->Wait();
   }
   auto end = SteadyClock::now();
-  EXPECT_NEAR(timing::ToDoubleMilliseconds(end - start), 2000.0, 0.05);
+  EXPECT_NEAR(util::ToDoubleMilliseconds(end - start), 2000.0, 0.05);
 }
 
 }  // namespace

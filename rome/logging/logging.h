@@ -103,26 +103,26 @@ inline void __rome_init_log__() {
 
 // General checks
 #define ROME_CHECK_QUIET(ret_func, check) \
-  if (!(check)) {                         \
+  if (!(check)) [[unlikely]] {            \
     return ret_func();                    \
   }
 #define ROME_CHECK(ret_func, check, ...) \
-  if (!(check)) {                        \
+  if (!(check)) [[unlikely]] {           \
     SPDLOG_ERROR(__VA_ARGS__);           \
     return ret_func();                   \
   }
 #define ROME_CHECK_OK(ret_func, status) \
-  if (!(status.ok())) {                 \
+  if (!(status.ok())) [[unlikely]] {    \
     SPDLOG_ERROR(status.ToString());    \
     return ret_func();                  \
   }
 #define ROME_ASSERT(check, ...)   \
-  if (!(check)) {                 \
+  if (!(check)) [[unlikely]] {    \
     SPDLOG_CRITICAL(__VA_ARGS__); \
     exit(1);                      \
   }
 #define ROME_ASSERT_OK(status)          \
-  if (!(status.ok())) {                 \
+  if (!(status.ok())) [[unlikely]] {    \
     SPDLOG_CRITICAL(status.ToString()); \
     exit(1);                            \
   }
@@ -131,12 +131,12 @@ inline void __rome_init_log__() {
 // `ROME_DO_DEBUG_CHECKS` in config.h
 #ifndef ROME_NDEBUG
 #define ROME_CHECK_DEBUG(ret_func, check, ...) \
-  if (!(check)) {                              \
+  if (!(check)) [[unlikely]] {                 \
     SPDLOG_ERROR(__VA_ARGS__);                 \
     return ret_func();                         \
   }
 #define ROME_ASSERT_DEBUG(func, ...) \
-  if (!(func)) {                     \
+  if (!(func)) [[unlikely]] {        \
     SPDLOG_ERROR(__VA_ARGS__);       \
     exit(1);                         \
   }

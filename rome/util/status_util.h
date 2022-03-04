@@ -14,9 +14,9 @@ class StatusBuilder {
   StatusBuilder(const StatusBuilder& other) : ss_(other.ss_.str()) {}
   StatusBuilder(StatusBuilder&& other) : ss_(other.ss_.str()) {}
 
-  // Add a string `s` to the internal `stringstream` to build a message.
-  StatusBuilder<ErrorCode>& operator<<(std::string_view s) {
-    ss_ << s;
+  template<typename T>
+  StatusBuilder<ErrorCode>& operator<<(T t) {
+    ss_ << t;
     return *this;
   }
 

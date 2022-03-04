@@ -1,0 +1,209 @@
+// A broker handles the connection setup using the RDMA CM library. It is single
+// threaded but communicates with all other brokers in the system to exchange
+// information regarding the underlying RDMA memory configurations.
+//
+// In the future, this could potentially be replaced with a more robust
+// component (e.g., Zookeeper) but for now we stick with a simple approach.
+#include "rdma_broker.h"
+
+#include <arpa/inet.h>
+#include <asm-generic/errno.h>
+#include <fcntl.h>
+#include <infiniband/verbs.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <rdma/rdma_cma.h>
+#include <rdma/rdma_verbs.h>
+#include <sys/stat.h>
+
+#include <barrier>
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <experimental/coroutine>
+#include <string>
+#include <string_view>
+#include <thread>
+#include <type_traits>
+#include <unordered_map>
+
+#include "absl/status/status.h"
+#include "rdma_device.h"
+#include "rdma_receiver.h"
+#include "rdma_util.h"
+#include "rome/logging/logging.h"
+#include "rome/util/coroutine.h"
+#include "rome/util/status_util.h"
+
+namespace rome {
+
+using ::util::Coro;
+using ::util::InternalErrorBuilder;
+using ::util::suspend_always;
+
+RdmaBroker ::~RdmaBroker() {
+  if (listen_channel_ != nullptr) {
+    rdma_destroy_event_channel(listen_channel_);
+  }
+}
+
+RdmaBroker::RdmaBroker(std::string_view id, std::string_view server,
+                       uint32_t port, RdmaReceiverInterface* receiver)
+    : id_(id),
+      server_(server),
+      port_(port),
+      terminate_(false),
+      status_(absl::OkStatus()),
+      listen_channel_(nullptr),
+      listen_id_(nullptr),
+      receiver_(receiver) {
+  std::barrier init(2);
+  broker_ = std::unique_ptr<std::thread, thread_deleter>(
+      new std::thread([&]() { this->Run(&init); }));
+  init.arrive_and_wait();
+}
+
+absl::Status RdmaBroker::Stop() {
+  ROME_DEBUG("Stopping: {}", id_);
+  terminate_ = true;
+  broker_.reset();
+  return status_;
+}
+
+absl::Status RdmaBroker::Init() {
+  // Check that devices exist before trying to set things up.
+  // TODO: Support using a specific device
+  auto devices = RdmaDevice::GetAvailableDevices();
+  ROME_CHECK_QUIET(ROME_RETURN(devices.status()), devices.ok());
+
+  rdma_addrinfo hints, *resolved;
+  ibv_qp_init_attr init_attr;
+
+  // Get the local connection information.
+  std::memset(&hints, 0, sizeof(hints));
+  hints.ai_flags = RAI_PASSIVE | AI_NUMERICSERV;
+  hints.ai_port_space = RDMA_PS_TCP;
+
+  int gai_ret = rdma_getaddrinfo(server_.data(), nullptr, &hints, &resolved);
+  ROME_CHECK_QUIET(ROME_RETURN(InternalErrorBuilder() << "rdma_getaddrinfo(): "
+                                                      << gai_strerror(gai_ret)),
+                   gai_ret == 0);
+  reinterpret_cast<sockaddr_in*>(resolved->ai_src_addr)->sin_port = port_;
+
+  // Create an endpoint to receive incoming requests on.
+  std::memset(&init_attr, 0, sizeof(init_attr));
+  init_attr.cap.max_send_wr = init_attr.cap.max_recv_wr = 16;
+  init_attr.cap.max_send_sge = init_attr.cap.max_recv_sge = 16;
+  init_attr.cap.max_inline_data = 16;
+  init_attr.sq_sig_all = 1;
+  RDMA_CM_CHECK(rdma_create_ep, &listen_id_, resolved, nullptr, &init_attr);
+
+  // Migrate the new endpoint to an async channel
+  listen_channel_ = rdma_create_event_channel();
+  RDMA_CM_CHECK(fcntl, listen_channel_->fd, F_SETFL,
+                fcntl(listen_channel_->fd, F_GETFL) | O_NONBLOCK);
+  RDMA_CM_CHECK(rdma_migrate_id, listen_id_, listen_channel_);
+
+  // Start listening for incoming requests on the endpoint.
+  RDMA_CM_CHECK(rdma_listen, listen_id_, 0);
+
+  ROME_DEBUG(
+      "Listening: {}:{}",
+      inet_ntoa(reinterpret_cast<sockaddr_in*>(rdma_get_local_addr(listen_id_))
+                    ->sin_addr),
+      rdma_get_src_port(listen_id_));
+
+  rdma_freeaddrinfo(resolved);
+  return absl::OkStatus();
+}
+
+Coro RdmaBroker::HandleConnectionRequests() {
+  rdma_cm_event* event = nullptr;
+  int ret;
+  while (true) {
+    do {
+      // Attempt to read from `listen_channel_`
+      ret = rdma_get_cm_event(listen_channel_, &event);
+      if (ret != 0 && errno != EAGAIN) {
+        status_ = InternalErrorBuilder()
+                  << "rdma_get_cm_event(): " << strerror(errno);
+        co_return;
+      }
+      co_await suspend_always{};
+    } while ((ret != 0 && errno == EAGAIN) && !terminate_);
+
+    // TODO: Perform cleanup.
+    if (terminate_) co_return;
+
+    ROME_DEBUG("Got event: {} (id={})", rdma_event_str(event->event),
+               fmt::ptr(event->id));
+    switch (event->event) {
+      case RDMA_CM_EVENT_TIMEWAIT_EXIT:  // Nothing to do.
+        ROME_WARN("rdma_cm: Timed out");
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        break;
+      case RDMA_CM_EVENT_CONNECT_REQUEST: {
+        rdma_cm_id* new_id = event->id;
+        rdma_ack_cm_event(event);
+        auto status = receiver_->OnConnectRequest(new_id);
+        if (status.ok()) {
+          RDMA_CM_ASSERT(rdma_accept, new_id, nullptr);
+        } else {
+          RDMA_CM_ASSERT(rdma_reject, new_id, nullptr, 0);
+        }
+        break;
+      }
+      case RDMA_CM_EVENT_ESTABLISHED: {
+        ROME_DEBUG("Established new connection");
+        rdma_cm_id* id = event->id;
+        // Now that we've established the connection, we can transition to
+        // using it to communicate with the other node. This is handled in
+        // another coroutine that we can resume every round.
+        rdma_ack_cm_event(event);
+        receiver_->OnEstablished(id);
+      } break;
+      case RDMA_CM_EVENT_DISCONNECTED: {
+        rdma_cm_id* id = event->id;
+        receiver_->OnDisconnect(id);
+        rdma_disconnect(id);
+        rdma_destroy_ep(id);
+      } break;
+      case RDMA_CM_EVENT_DEVICE_REMOVAL:
+        // TODO: Cleanup
+        ROME_ERROR("event: {}, error: {}\n", rdma_event_str(event->event),
+                   event->status);
+        break;
+      case RDMA_CM_EVENT_ADDR_ERROR:
+      case RDMA_CM_EVENT_ROUTE_ERROR:
+      case RDMA_CM_EVENT_UNREACHABLE:
+      case RDMA_CM_EVENT_ADDR_RESOLVED:
+      case RDMA_CM_EVENT_REJECTED:
+      case RDMA_CM_EVENT_CONNECT_ERROR:
+        // These signals are sent to a connecting endpoint, so we should not see
+        // them here. If they appear, abort.
+        ROME_FATAL("Unexpected signal: {}", rdma_event_str(event->event));
+      default:
+        ROME_FATAL("Not implemented");
+    }
+
+    co_await suspend_always{};  // Suspend after handling a given message.
+  }
+}
+
+void RdmaBroker::Run(std::barrier<>* init) {
+  // The call to `Init()` will never block because the file descriptor used is
+  // configured as nonblocking. Therefore, we can safely use a barrier here and
+  // in the constructor (which launches the `broker_` thread) without having to
+  // worry.
+  status_ = Init();
+  init->arrive_and_wait();
+  ROME_ASSERT_OK(status_);
+
+  scheduler_.Schedule(HandleConnectionRequests());
+  scheduler_.Run();
+  ROME_TRACE("Finished: {}", status_.ok() ? "Ok" : status_.message());
+}
+
+}  // namespace rdma

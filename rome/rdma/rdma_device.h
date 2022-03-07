@@ -24,6 +24,8 @@ class RdmaDevice {
     auto *device = new RdmaDevice();
     ROME_CHECK_OK(ROME_RETURN(nullptr), device->OpenDevice(name));
     ROME_CHECK_OK(ROME_RETURN(nullptr), device->ResolvePort(port));
+    ROME_INFO("Created device: dev_name={}, port={}", device->name(),
+              device->port());
     return std::unique_ptr<RdmaDevice>(device);
   }
 
@@ -33,6 +35,7 @@ class RdmaDevice {
   RdmaDevice(RdmaDevice &&) = delete;       //! No moves
 
   // Getters.
+  std::string name() { return dev_context_->device->name; }
   int port() { return port_; }
 
   //  Creates a new protection domain registered with the device under the given

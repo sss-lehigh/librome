@@ -14,7 +14,7 @@ class StatusBuilder {
   StatusBuilder(const StatusBuilder& other) : ss_(other.ss_.str()) {}
   StatusBuilder(StatusBuilder&& other) : ss_(other.ss_.str()) {}
 
-  template<typename T>
+  template <typename T>
   StatusBuilder<ErrorCode>& operator<<(T t) {
     ss_ << t;
     return *this;
@@ -37,5 +37,7 @@ using AlreadyExistsErrorBuilder =
 using FailedPreconditionErrorBuilder =
     StatusBuilder<absl::StatusCode::kFailedPrecondition>;
 using InternalErrorBuilder = StatusBuilder<absl::StatusCode::kInternal>;
+using ResourceExhaustedErrorBuilder =
+    StatusBuilder<absl::StatusCode::kResourceExhausted>;
 
-}  // namespace rome
+}  // namespace util

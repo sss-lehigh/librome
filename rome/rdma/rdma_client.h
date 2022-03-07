@@ -6,7 +6,7 @@ namespace rome {
 
 class RdmaClientInterface {
  public:
-  virtual absl::Status Connect(std::string_view server, uint32_t port) = 0;
+  virtual absl::Status Connect(std::string_view server, uint16_t port) = 0;
 };
 
-}  // namespace X::rdma
+}  // namespace rome

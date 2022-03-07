@@ -16,10 +16,10 @@ cc_library(
     linkopts = ["-libverbs"],
     deps = [
         ":rdma_util",
-        "@absl//absl/status",
-        "@absl//absl/status:statusor",
         "//rome/logging",
         "//rome/util:status_util",
+        "@absl//absl/status",
+        "@absl//absl/status:statusor",
     ],
 )
 
@@ -28,8 +28,8 @@ cc_test(
     srcs = ["rdma_device_test.cc"],
     deps = [
         ":rdma_device",
-        "@gtest//:gtest_main",
         "//rome/testutil:status_matcher",
+        "@gtest//:gtest_main",
     ],
 )
 
@@ -40,10 +40,10 @@ cc_library(
     linkopts = ["-libverbs"],
     deps = [
         ":rdma_util",
-        "@absl//absl/status",
-        "@absl//absl/status:statusor",
         "//rome/logging",
         "//rome/util:status_util",
+        "@absl//absl/status",
+        "@absl//absl/status:statusor",
     ],
 )
 
@@ -53,9 +53,9 @@ cc_test(
     deps = [
         ":rdma_device",
         ":rdma_memory",
+        "//rome/testutil:status_matcher",
         "@absl//absl/status",
         "@gtest//:gtest_main",
-        "//rome/testutil:status_matcher",
     ],
 )
 
@@ -91,10 +91,11 @@ cc_library(
         ":rdma_device",
         ":rdma_receiver",
         ":rdma_util",
-        "@absl//absl/status",
         "//rome/logging",
         "//rome/util:coroutine",
         "//rome/util:status_util",
+        "@absl//absl/status",
+        "@absl//absl/status:statusor",
     ],
 )
 
@@ -105,9 +106,9 @@ cc_test(
         ":rdma_broker",
         ":rdma_client",
         ":rdma_receiver",
-        "@gtest//:gtest_main",
         "//rome/testutil:status_matcher",
         "//rome/util:coroutine",
         "//rome/util:status_util",
+        "@gtest//:gtest_main",
     ],
 )

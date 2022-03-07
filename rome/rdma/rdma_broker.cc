@@ -41,6 +41,7 @@ namespace rome {
 
 using ::util::Coro;
 using ::util::InternalErrorBuilder;
+using ::util::NotFoundErrorBuilder;
 using ::util::suspend_always;
 
 RdmaBroker ::~RdmaBroker() {
@@ -49,32 +50,29 @@ RdmaBroker ::~RdmaBroker() {
   }
 }
 
-RdmaBroker::RdmaBroker(std::string_view id, std::string_view server,
-                       uint32_t port, RdmaReceiverInterface* receiver)
-    : id_(id),
-      server_(server),
-      port_(port),
-      terminate_(false),
+std::unique_ptr<RdmaBroker> RdmaBroker::Create(
+    std::string_view device, std::optional<uint16_t> port,
+    RdmaReceiverInterface* receiver) {
+  auto broker = std::unique_ptr<RdmaBroker>(new RdmaBroker(receiver));
+  auto status = broker->Init(device, port);
+  if (status.ok()) {
+    return broker;
+  } else {
+    ROME_ERROR(status.ToString());
+    return nullptr;
+  }
+}
+
+RdmaBroker::RdmaBroker(RdmaReceiverInterface* receiver)
+    : terminate_(false),
       status_(absl::OkStatus()),
       listen_channel_(nullptr),
       listen_id_(nullptr),
-      receiver_(receiver) {
-  std::barrier init(2);
-  broker_ = std::unique_ptr<std::thread, thread_deleter>(
-      new std::thread([&]() { this->Run(&init); }));
-  init.arrive_and_wait();
-}
+      receiver_(receiver) {}
 
-absl::Status RdmaBroker::Stop() {
-  ROME_DEBUG("Stopping: {}", id_);
-  terminate_ = true;
-  broker_.reset();
-  return status_;
-}
-
-absl::Status RdmaBroker::Init() {
+absl::Status RdmaBroker::Init(std::string_view addr,
+                              std::optional<uint16_t> port) {
   // Check that devices exist before trying to set things up.
-  // TODO: Support using a specific device
   auto devices = RdmaDevice::GetAvailableDevices();
   ROME_CHECK_QUIET(ROME_RETURN(devices.status()), devices.ok());
 
@@ -86,11 +84,13 @@ absl::Status RdmaBroker::Init() {
   hints.ai_flags = RAI_PASSIVE | AI_NUMERICSERV;
   hints.ai_port_space = RDMA_PS_TCP;
 
-  int gai_ret = rdma_getaddrinfo(server_.data(), nullptr, &hints, &resolved);
+  int gai_ret = rdma_getaddrinfo(
+      addr.data(),
+      port.has_value() ? std::to_string(htons(port.value())).data() : nullptr,
+      &hints, &resolved);
   ROME_CHECK_QUIET(ROME_RETURN(InternalErrorBuilder() << "rdma_getaddrinfo(): "
                                                       << gai_strerror(gai_ret)),
                    gai_ret == 0);
-  reinterpret_cast<sockaddr_in*>(resolved->ai_src_addr)->sin_port = port_;
 
   // Create an endpoint to receive incoming requests on.
   std::memset(&init_attr, 0, sizeof(init_attr));
@@ -109,14 +109,25 @@ absl::Status RdmaBroker::Init() {
   // Start listening for incoming requests on the endpoint.
   RDMA_CM_CHECK(rdma_listen, listen_id_, 0);
 
-  ROME_DEBUG(
-      "Listening: {}:{}",
+  addr_ =
       inet_ntoa(reinterpret_cast<sockaddr_in*>(rdma_get_local_addr(listen_id_))
-                    ->sin_addr),
-      rdma_get_src_port(listen_id_));
+                    ->sin_addr);
+  port_ = rdma_get_src_port(listen_id_);
+  ROME_INFO("Listening: {}:{}", addr_, port_);
 
   rdma_freeaddrinfo(resolved);
+
+  broker_ = std::unique_ptr<std::thread, thread_deleter>(
+      new std::thread([&]() { this->Run(); }));
+
   return absl::OkStatus();
+}
+
+absl::Status RdmaBroker::Stop() {
+  ROME_DEBUG("Stopping: {}", id_);
+  terminate_ = true;
+  broker_.reset();
+  return status_;
 }
 
 Coro RdmaBroker::HandleConnectionRequests() {
@@ -192,18 +203,10 @@ Coro RdmaBroker::HandleConnectionRequests() {
   }
 }
 
-void RdmaBroker::Run(std::barrier<>* init) {
-  // The call to `Init()` will never block because the file descriptor used is
-  // configured as nonblocking. Therefore, we can safely use a barrier here and
-  // in the constructor (which launches the `broker_` thread) without having to
-  // worry.
-  status_ = Init();
-  init->arrive_and_wait();
-  ROME_ASSERT_OK(status_);
-
+void RdmaBroker::Run() {
   scheduler_.Schedule(HandleConnectionRequests());
   scheduler_.Run();
   ROME_TRACE("Finished: {}", status_.ok() ? "Ok" : status_.message());
 }
 
-}  // namespace rdma
+}  // namespace rome

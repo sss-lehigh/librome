@@ -51,7 +51,7 @@ common_linker_flags = [
 ]
 
 clang_compile_flags = [
-    "-Werror",
+    # "-Werror",
     "-stdlib=libc++",
     "-fcoroutines-ts",
 ]
@@ -145,7 +145,7 @@ def _clang_impl(ctx):
                     actions = all_cpp_compile_actions,
                     flag_groups = ([
                         flag_group(
-                            flags = common_compile_flags + [
+                            flags = common_compile_flags + clang_compile_flags + [
                                 "-stdlib=libc++",
                             ],
                         ),

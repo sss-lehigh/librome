@@ -1,3 +1,4 @@
+#pragma once
 // A broker handles the connection setup using the RDMA CM library. It is single
 // threaded but communicates with all other brokers in the system to exchange
 // information regarding the underlying RDMA memory configurations.
@@ -57,6 +58,7 @@ class RdmaBroker {
 
   // Getters.
   uint16_t port() const { return port_; }
+  ibv_pd* pd() const { return listen_id_->pd; }
 
   absl::Status Stop();
 

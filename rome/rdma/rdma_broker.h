@@ -57,6 +57,7 @@ class RdmaBroker {
   RdmaBroker(RdmaBroker&&) = delete;
 
   // Getters.
+  std::string address() const { return address_; }
   uint16_t port() const { return port_; }
   ibv_pd* pd() const { return listen_id_->pd; }
 
@@ -75,7 +76,7 @@ class RdmaBroker {
 
   void Run();
 
-  std::string addr_;
+  std::string address_;
   uint16_t port_;
 
   // Flag to indicate that the worker thread should terminate.

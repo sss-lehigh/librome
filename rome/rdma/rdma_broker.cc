@@ -70,7 +70,7 @@ RdmaBroker::RdmaBroker(RdmaReceiverInterface* receiver)
       listen_id_(nullptr),
       receiver_(receiver) {}
 
-absl::Status RdmaBroker::Init(std::string_view addr,
+absl::Status RdmaBroker::Init(std::string_view address,
                               std::optional<uint16_t> port) {
   // Check that devices exist before trying to set things up.
   auto devices = RdmaDevice::GetAvailableDevices();
@@ -85,7 +85,7 @@ absl::Status RdmaBroker::Init(std::string_view addr,
   hints.ai_port_space = RDMA_PS_TCP;
 
   int gai_ret = rdma_getaddrinfo(
-      addr.data(),
+      address.data(),
       port.has_value() ? std::to_string(htons(port.value())).data() : nullptr,
       &hints, &resolved);
   ROME_CHECK_QUIET(ROME_RETURN(InternalErrorBuilder() << "rdma_getaddrinfo(): "
@@ -109,11 +109,11 @@ absl::Status RdmaBroker::Init(std::string_view addr,
   // Start listening for incoming requests on the endpoint.
   RDMA_CM_CHECK(rdma_listen, listen_id_, 0);
 
-  addr_ =
+  address_ =
       inet_ntoa(reinterpret_cast<sockaddr_in*>(rdma_get_local_addr(listen_id_))
                     ->sin_addr);
   port_ = rdma_get_src_port(listen_id_);
-  ROME_INFO("Listening: {}:{}", addr_, port_);
+  ROME_INFO("Listening: {}:{}", address_, port_);
 
   rdma_freeaddrinfo(resolved);
 
@@ -124,7 +124,6 @@ absl::Status RdmaBroker::Init(std::string_view addr,
 }
 
 absl::Status RdmaBroker::Stop() {
-  ROME_DEBUG("Stopping: {}", id_);
   terminate_ = true;
   broker_.reset();
   return status_;
@@ -167,7 +166,6 @@ Coro RdmaBroker::HandleConnectionRequests() {
         break;
       }
       case RDMA_CM_EVENT_ESTABLISHED: {
-        ROME_DEBUG("Established new connection");
         rdma_cm_id* id = event->id;
         // Now that we've established the connection, we can transition to
         // using it to communicate with the other node. This is handled in

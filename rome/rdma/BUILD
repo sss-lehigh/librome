@@ -66,16 +66,7 @@ cc_library(
         "-lrdmacm",
     ],
     deps = [
-        "@absl//absl/status",
-    ],
-)
-
-cc_library(
-    name = "rdma_client",
-    hdrs = ["rdma_client.h"],
-    deps = [
-        ":rdma_util",
-        "@absl//absl/status",
+        "@absl//absl/status:statusor",
     ],
 )
 
@@ -104,7 +95,6 @@ cc_test(
     srcs = ["rdma_broker_test.cc"],
     deps = [
         ":rdma_broker",
-        ":rdma_client",
         ":rdma_receiver",
         "//rome/testutil:status_matcher",
         "//rome/util:coroutine",

@@ -31,6 +31,12 @@ class RdmaMemory {
   RdmaMemory(uint64_t capacity, std::optional<std::string_view> path,
              ibv_pd* const pd);
 
+  RdmaMemory(const RdmaMemory&) = delete;
+  RdmaMemory(RdmaMemory&& rm)
+      : capacity_(rm.capacity_),
+        raw_(std::move(rm.raw_)),
+        memory_regions_(std::move(rm.memory_regions_)) {}
+
   // Getters.
   uint64_t capacity() const { return capacity_; }
 

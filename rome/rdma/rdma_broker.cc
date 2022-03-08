@@ -45,6 +45,7 @@ using ::util::NotFoundErrorBuilder;
 using ::util::suspend_always;
 
 RdmaBroker ::~RdmaBroker() {
+  [[maybe_unused]] auto s = Stop();
   if (listen_channel_ != nullptr) {
     rdma_destroy_event_channel(listen_channel_);
   }
@@ -95,8 +96,8 @@ absl::Status RdmaBroker::Init(std::string_view address,
   // Create an endpoint to receive incoming requests on.
   std::memset(&init_attr, 0, sizeof(init_attr));
   init_attr.cap.max_send_wr = init_attr.cap.max_recv_wr = 16;
-  init_attr.cap.max_send_sge = init_attr.cap.max_recv_sge = 16;
-  init_attr.cap.max_inline_data = 16;
+  init_attr.cap.max_send_sge = init_attr.cap.max_recv_sge = 1;
+  init_attr.cap.max_inline_data = 0;
   init_attr.sq_sig_all = 1;
   RDMA_CM_CHECK(rdma_create_ep, &listen_id_, resolved, nullptr, &init_attr);
 
@@ -156,10 +157,10 @@ Coro RdmaBroker::HandleConnectionRequests() {
         break;
       case RDMA_CM_EVENT_CONNECT_REQUEST: {
         rdma_cm_id* new_id = event->id;
+        auto conn_param_or = receiver_->OnConnectRequest(new_id, event);
         rdma_ack_cm_event(event);
-        auto status = receiver_->OnConnectRequest(new_id);
-        if (status.ok()) {
-          RDMA_CM_ASSERT(rdma_accept, new_id, nullptr);
+        if (conn_param_or.ok()) {
+          RDMA_CM_ASSERT(rdma_accept, new_id, conn_param_or.value());
         } else {
           RDMA_CM_ASSERT(rdma_reject, new_id, nullptr, 0);
         }
@@ -170,14 +171,13 @@ Coro RdmaBroker::HandleConnectionRequests() {
         // Now that we've established the connection, we can transition to
         // using it to communicate with the other node. This is handled in
         // another coroutine that we can resume every round.
+        receiver_->OnEstablished(id, event);
         rdma_ack_cm_event(event);
-        receiver_->OnEstablished(id);
       } break;
       case RDMA_CM_EVENT_DISCONNECTED: {
         rdma_cm_id* id = event->id;
-        receiver_->OnDisconnect(id);
-        rdma_disconnect(id);
-        rdma_destroy_ep(id);
+        receiver_->OnDisconnect(id, event);
+        rdma_ack_cm_event(event);
       } break;
       case RDMA_CM_EVENT_DEVICE_REMOVAL:
         // TODO: Cleanup

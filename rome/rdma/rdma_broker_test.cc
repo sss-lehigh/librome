@@ -9,7 +9,6 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "rdma_client.h"
 #include "rdma_receiver.h"
 #include "rdma_util.h"
 #include "rome/testutil/status_matcher.h"
@@ -25,7 +24,8 @@ constexpr uint16_t kPort = 18018;
 
 class FakeRdmaReceiver : public RdmaReceiverInterface {
  public:
-  absl::Status OnConnectRequest(rdma_cm_id* id) override {
+  absl::StatusOr<rdma_conn_param*> OnConnectRequest(
+      rdma_cm_id* id, rdma_cm_event* event) override {
     ibv_qp_init_attr init_attr;
     std::memset(&init_attr, 0, sizeof(init_attr));
     init_attr.cap.max_send_wr = init_attr.cap.max_recv_wr = 1;
@@ -33,15 +33,15 @@ class FakeRdmaReceiver : public RdmaReceiverInterface {
     init_attr.cap.max_inline_data = 0;
     init_attr.qp_type = id->qp_type;
     RDMA_CM_ASSERT(rdma_create_qp, id, nullptr, &init_attr);
-    return absl::OkStatus();
+    return nullptr;
   }
-  void OnEstablished(rdma_cm_id* id) override {}
-  void OnDisconnect(rdma_cm_id* id) override {}
+  void OnEstablished(rdma_cm_id* id, rdma_cm_event* event) override {}
+  void OnDisconnect(rdma_cm_id* id, rdma_cm_event* event) override {}
 };
 
-class FakeRdmaClient : public RdmaClientInterface {
+class FakeRdmaClient {
  public:
-  absl::Status Connect(std::string_view server, uint16_t port) override {
+  absl::Status Connect(std::string_view server, uint16_t port) {
     rdma_cm_id* id = nullptr;
     rdma_addrinfo hints, *resolved;
     ibv_qp_init_attr init_attr;

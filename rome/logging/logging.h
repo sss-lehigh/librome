@@ -99,46 +99,46 @@ inline void __rome_init_log__() {
 #define ROME_RETURN_FALSE []() { return false; }
 #define ROME_RETURN_TRUE []() { return true; }
 #define ROME_NOOP []() {}
-#define ROME_ABORT []() { std::exit(1); }
+#define ROME_ABORT []() { abort(); }
 
 // General checks
 #define ROME_CHECK_QUIET(ret_func, check) \
-  if (!(check)) {                         \
+  if (!(check)) [[unlikely]] {            \
     return ret_func();                    \
   }
 #define ROME_CHECK(ret_func, check, ...) \
-  if (!(check)) {                        \
+  if (!(check)) [[unlikely]] {           \
     SPDLOG_ERROR(__VA_ARGS__);           \
     return ret_func();                   \
   }
 #define ROME_CHECK_OK(ret_func, status) \
-  if (!(status.ok())) {                 \
+  if (!(status.ok())) [[unlikely]] {    \
     SPDLOG_ERROR(status.ToString());    \
     return ret_func();                  \
   }
 #define ROME_ASSERT(check, ...)   \
-  if (!(check)) {                 \
+  if (!(check)) [[unlikely]] {    \
     SPDLOG_CRITICAL(__VA_ARGS__); \
-    exit(1);                      \
+    abort();                      \
   }
 #define ROME_ASSERT_OK(status)          \
-  if (!(status.ok())) {                 \
+  if (!(status.ok())) [[unlikely]] {    \
     SPDLOG_CRITICAL(status.ToString()); \
-    exit(1);                            \
+    abort();                            \
   }
 
 // Specific checks for debugging. Can be turned off by commenting out
 // `ROME_DO_DEBUG_CHECKS` in config.h
 #ifndef ROME_NDEBUG
 #define ROME_CHECK_DEBUG(ret_func, check, ...) \
-  if (!(check)) {                              \
+  if (!(check)) [[unlikely]] {                 \
     SPDLOG_ERROR(__VA_ARGS__);                 \
     return ret_func();                         \
   }
 #define ROME_ASSERT_DEBUG(func, ...) \
-  if (!(func)) {                     \
+  if (!(func)) [[unlikely]] {        \
     SPDLOG_ERROR(__VA_ARGS__);       \
-    exit(1);                         \
+    abort();                         \
   }
 #else
 #define ROME_CHECK_DEBUG(...) ((void)0)

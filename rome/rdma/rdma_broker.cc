@@ -41,40 +41,39 @@ namespace rome {
 
 using ::util::Coro;
 using ::util::InternalErrorBuilder;
+using ::util::NotFoundErrorBuilder;
 using ::util::suspend_always;
 
 RdmaBroker ::~RdmaBroker() {
+  [[maybe_unused]] auto s = Stop();
   if (listen_channel_ != nullptr) {
     rdma_destroy_event_channel(listen_channel_);
   }
 }
 
-RdmaBroker::RdmaBroker(std::string_view id, std::string_view server,
-                       uint32_t port, RdmaReceiverInterface* receiver)
-    : id_(id),
-      server_(server),
-      port_(port),
-      terminate_(false),
+std::unique_ptr<RdmaBroker> RdmaBroker::Create(
+    std::string_view device, std::optional<uint16_t> port,
+    RdmaReceiverInterface* receiver) {
+  auto broker = std::unique_ptr<RdmaBroker>(new RdmaBroker(receiver));
+  auto status = broker->Init(device, port);
+  if (status.ok()) {
+    return broker;
+  } else {
+    ROME_ERROR(status.ToString());
+    return nullptr;
+  }
+}
+
+RdmaBroker::RdmaBroker(RdmaReceiverInterface* receiver)
+    : terminate_(false),
       status_(absl::OkStatus()),
       listen_channel_(nullptr),
       listen_id_(nullptr),
-      receiver_(receiver) {
-  std::barrier init(2);
-  broker_ = std::unique_ptr<std::thread, thread_deleter>(
-      new std::thread([&]() { this->Run(&init); }));
-  init.arrive_and_wait();
-}
+      receiver_(receiver) {}
 
-absl::Status RdmaBroker::Stop() {
-  ROME_DEBUG("Stopping: {}", id_);
-  terminate_ = true;
-  broker_.reset();
-  return status_;
-}
-
-absl::Status RdmaBroker::Init() {
+absl::Status RdmaBroker::Init(std::string_view address,
+                              std::optional<uint16_t> port) {
   // Check that devices exist before trying to set things up.
-  // TODO: Support using a specific device
   auto devices = RdmaDevice::GetAvailableDevices();
   ROME_CHECK_QUIET(ROME_RETURN(devices.status()), devices.ok());
 
@@ -86,17 +85,19 @@ absl::Status RdmaBroker::Init() {
   hints.ai_flags = RAI_PASSIVE | AI_NUMERICSERV;
   hints.ai_port_space = RDMA_PS_TCP;
 
-  int gai_ret = rdma_getaddrinfo(server_.data(), nullptr, &hints, &resolved);
+  int gai_ret = rdma_getaddrinfo(
+      address.data(),
+      port.has_value() ? std::to_string(htons(port.value())).data() : nullptr,
+      &hints, &resolved);
   ROME_CHECK_QUIET(ROME_RETURN(InternalErrorBuilder() << "rdma_getaddrinfo(): "
                                                       << gai_strerror(gai_ret)),
                    gai_ret == 0);
-  reinterpret_cast<sockaddr_in*>(resolved->ai_src_addr)->sin_port = port_;
 
   // Create an endpoint to receive incoming requests on.
   std::memset(&init_attr, 0, sizeof(init_attr));
   init_attr.cap.max_send_wr = init_attr.cap.max_recv_wr = 16;
-  init_attr.cap.max_send_sge = init_attr.cap.max_recv_sge = 16;
-  init_attr.cap.max_inline_data = 16;
+  init_attr.cap.max_send_sge = init_attr.cap.max_recv_sge = 1;
+  init_attr.cap.max_inline_data = 0;
   init_attr.sq_sig_all = 1;
   RDMA_CM_CHECK(rdma_create_ep, &listen_id_, resolved, nullptr, &init_attr);
 
@@ -109,14 +110,24 @@ absl::Status RdmaBroker::Init() {
   // Start listening for incoming requests on the endpoint.
   RDMA_CM_CHECK(rdma_listen, listen_id_, 0);
 
-  ROME_DEBUG(
-      "Listening: {}:{}",
+  address_ =
       inet_ntoa(reinterpret_cast<sockaddr_in*>(rdma_get_local_addr(listen_id_))
-                    ->sin_addr),
-      rdma_get_src_port(listen_id_));
+                    ->sin_addr);
+  port_ = rdma_get_src_port(listen_id_);
+  ROME_INFO("Listening: {}:{}", address_, port_);
 
   rdma_freeaddrinfo(resolved);
+
+  broker_ = std::unique_ptr<std::thread, thread_deleter>(
+      new std::thread([&]() { this->Run(); }));
+
   return absl::OkStatus();
+}
+
+absl::Status RdmaBroker::Stop() {
+  terminate_ = true;
+  broker_.reset();
+  return status_;
 }
 
 Coro RdmaBroker::HandleConnectionRequests() {
@@ -146,29 +157,27 @@ Coro RdmaBroker::HandleConnectionRequests() {
         break;
       case RDMA_CM_EVENT_CONNECT_REQUEST: {
         rdma_cm_id* new_id = event->id;
+        auto conn_param_or = receiver_->OnConnectRequest(new_id, event);
         rdma_ack_cm_event(event);
-        auto status = receiver_->OnConnectRequest(new_id);
-        if (status.ok()) {
-          RDMA_CM_ASSERT(rdma_accept, new_id, nullptr);
+        if (conn_param_or.ok()) {
+          RDMA_CM_ASSERT(rdma_accept, new_id, conn_param_or.value());
         } else {
           RDMA_CM_ASSERT(rdma_reject, new_id, nullptr, 0);
         }
         break;
       }
       case RDMA_CM_EVENT_ESTABLISHED: {
-        ROME_DEBUG("Established new connection");
         rdma_cm_id* id = event->id;
         // Now that we've established the connection, we can transition to
         // using it to communicate with the other node. This is handled in
         // another coroutine that we can resume every round.
+        receiver_->OnEstablished(id, event);
         rdma_ack_cm_event(event);
-        receiver_->OnEstablished(id);
       } break;
       case RDMA_CM_EVENT_DISCONNECTED: {
         rdma_cm_id* id = event->id;
-        receiver_->OnDisconnect(id);
-        rdma_disconnect(id);
-        rdma_destroy_ep(id);
+        receiver_->OnDisconnect(id, event);
+        rdma_ack_cm_event(event);
       } break;
       case RDMA_CM_EVENT_DEVICE_REMOVAL:
         // TODO: Cleanup
@@ -192,18 +201,10 @@ Coro RdmaBroker::HandleConnectionRequests() {
   }
 }
 
-void RdmaBroker::Run(std::barrier<>* init) {
-  // The call to `Init()` will never block because the file descriptor used is
-  // configured as nonblocking. Therefore, we can safely use a barrier here and
-  // in the constructor (which launches the `broker_` thread) without having to
-  // worry.
-  status_ = Init();
-  init->arrive_and_wait();
-  ROME_ASSERT_OK(status_);
-
+void RdmaBroker::Run() {
   scheduler_.Schedule(HandleConnectionRequests());
   scheduler_.Run();
   ROME_TRACE("Finished: {}", status_.ok() ? "Ok" : status_.message());
 }
 
-}  // namespace rdma
+}  // namespace rome

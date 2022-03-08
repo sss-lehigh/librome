@@ -1,3 +1,4 @@
+#pragma once
 // A broker handles the connection setup using the RDMA CM library. It is single
 // threaded but communicates with all other brokers in the system to exchange
 // information regarding the underlying RDMA memory configurations.
@@ -28,6 +29,7 @@
 #include <unordered_map>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "rdma_receiver.h"
 #include "rome/logging/logging.h"
 #include "rome/util/coroutine.h"
@@ -42,28 +44,40 @@ using Scheduler = RoundRobinScheduler;
 class RdmaBroker {
  public:
   ~RdmaBroker();
-  RdmaBroker(std::string_view id, std::string_view server, uint32_t port,
-             RdmaReceiverInterface* receiver);
+
+  // Creates a new broker on the given `device` and `port` using the provided
+  // `receiver`. If the initialization fails, then the status is propagated to
+  // the caller. Otherwise, a unique pointer to the newly created `RdmaBroker`
+  // is returned.
+  static std::unique_ptr<RdmaBroker> Create(std::string_view device,
+                                            std::optional<uint16_t> port,
+                                            RdmaReceiverInterface* receiver);
 
   RdmaBroker(const RdmaBroker&) = delete;
   RdmaBroker(RdmaBroker&&) = delete;
 
-  absl::Status Connect(std::string_view server, uint32_t port);
+  // Getters.
+  std::string address() const { return address_; }
+  uint16_t port() const { return port_; }
+  ibv_pd* pd() const { return listen_id_->pd; }
 
   absl::Status Stop();
 
  private:
   static constexpr int kMaxRetries = 100;
 
-  absl::Status Init();
+  RdmaBroker(RdmaReceiverInterface* receiver);
+
+  // Start the broker listening on the given `device` and `port`. If `port` is
+  // `nullopt`, then the first available port is used.
+  absl::Status Init(std::string_view addr, std::optional<uint16_t> port);
 
   Coro HandleConnectionRequests();
 
-  void Run(std::barrier<>* barrier);
+  void Run();
 
-  std::string id_;
-  std::string server_;
-  uint32_t port_;
+  std::string address_;
+  uint16_t port_;
 
   // Flag to indicate that the worker thread should terminate.
   std::atomic<bool> terminate_;
@@ -88,4 +102,4 @@ class RdmaBroker {
   Scheduler scheduler_;
 };
 
-}  // namespace rdma
+}  // namespace rome

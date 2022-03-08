@@ -45,7 +45,9 @@ class Promise {
 
   suspend_always initial_suspend() { return {}; }
   suspend_always final_suspend() noexcept { return {}; }
-  void unhandled_exception() { throw std::current_exception(); }
+  void unhandled_exception() {
+    std::rethrow_exception(std::current_exception());
+  }
   void return_void() {}
 };
 

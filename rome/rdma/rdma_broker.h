@@ -39,7 +39,7 @@ namespace rome {
 
 using ::util::Coro;
 using ::util::RoundRobinScheduler;
-using Scheduler = RoundRobinScheduler;
+using Scheduler = RoundRobinScheduler<::util::Promise>;
 
 class RdmaBroker {
  public:
@@ -80,7 +80,7 @@ class RdmaBroker {
   uint16_t port_;
 
   // Flag to indicate that the worker thread should terminate.
-  std::atomic<bool> terminate_;
+  volatile bool terminate_;
 
   // The working thread that listens and responds to incoming messages.
   struct thread_deleter {
@@ -94,6 +94,9 @@ class RdmaBroker {
   // RDMA CM related members.
   rdma_event_channel* listen_channel_;
   rdma_cm_id* listen_id_;
+
+  // The total number of connections made by this broker.
+  std::atomic<uint32_t> num_connections_;
 
   // Maintains connections that are forwarded by the broker.
   RdmaReceiverInterface* receiver_;  //! NOT OWNED

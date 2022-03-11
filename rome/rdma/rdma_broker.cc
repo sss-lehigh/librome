@@ -69,6 +69,7 @@ RdmaBroker::RdmaBroker(RdmaReceiverInterface* receiver)
       status_(absl::OkStatus()),
       listen_channel_(nullptr),
       listen_id_(nullptr),
+      num_connections_(0),
       receiver_(receiver) {}
 
 absl::Status RdmaBroker::Init(std::string_view address,
@@ -124,6 +125,8 @@ absl::Status RdmaBroker::Init(std::string_view address,
   return absl::OkStatus();
 }
 
+// When shutting down the broker we must be careful. First, we signal to the
+// connection request handler that we are not accepting new requests.
 absl::Status RdmaBroker::Stop() {
   terminate_ = true;
   broker_.reset();
@@ -135,6 +138,10 @@ Coro RdmaBroker::HandleConnectionRequests() {
   int ret;
   while (true) {
     do {
+      // If we are shutting down, and there are no connections left then we
+      // should finish.
+      if (terminate_) co_return;
+
       // Attempt to read from `listen_channel_`
       ret = rdma_get_cm_event(listen_channel_, &event);
       if (ret != 0 && errno != EAGAIN) {
@@ -143,25 +150,24 @@ Coro RdmaBroker::HandleConnectionRequests() {
         co_return;
       }
       co_await suspend_always{};
-    } while ((ret != 0 && errno == EAGAIN) && !terminate_);
-
-    // TODO: Perform cleanup.
-    if (terminate_) co_return;
+    } while ((ret != 0 && errno == EAGAIN));
 
     ROME_DEBUG("Got event: {} (id={})", rdma_event_str(event->event),
                fmt::ptr(event->id));
     switch (event->event) {
       case RDMA_CM_EVENT_TIMEWAIT_EXIT:  // Nothing to do.
-        ROME_WARN("rdma_cm: Timed out");
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        rdma_ack_cm_event(event);
         break;
       case RDMA_CM_EVENT_CONNECT_REQUEST: {
         rdma_cm_id* new_id = event->id;
         auto conn_param_or = receiver_->OnConnectRequest(new_id, event);
         rdma_ack_cm_event(event);
+
+        // If the receiver accepted the connection and
         if (conn_param_or.ok()) {
           RDMA_CM_ASSERT(rdma_accept, new_id, conn_param_or.value());
         } else {
+          ROME_DEBUG(conn_param_or.status().ToString());
           RDMA_CM_ASSERT(rdma_reject, new_id, nullptr, 0);
         }
         break;
@@ -173,11 +179,20 @@ Coro RdmaBroker::HandleConnectionRequests() {
         // another coroutine that we can resume every round.
         receiver_->OnEstablished(id, event);
         rdma_ack_cm_event(event);
+        num_connections_.fetch_add(1);
+        ROME_DEBUG("({}) Num connections: {}", fmt::ptr(this),
+                   num_connections_);
       } break;
       case RDMA_CM_EVENT_DISCONNECTED: {
         rdma_cm_id* id = event->id;
         receiver_->OnDisconnect(id, event);
         rdma_ack_cm_event(event);
+
+        // `num_connections_` will only reach zero once all connections have
+        // recevied their disconnect messages.
+        num_connections_.fetch_add(-1);
+        ROME_DEBUG("({}) Num connections: {}", fmt::ptr(this),
+                   num_connections_);
       } break;
       case RDMA_CM_EVENT_DEVICE_REMOVAL:
         // TODO: Cleanup

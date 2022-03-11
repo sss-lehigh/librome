@@ -53,10 +53,11 @@ class Promise {
 
 // The interface for all coroutine schedulers. A scheduler can add new
 // coroutines, start running, and cancel running. So
+template <typename PromiseT>
 class Scheduler {
  public:
   // Adds a new coroutine to the runner to be run with a given policy.
-  virtual void Schedule(Coro task) = 0;
+  virtual void Schedule(coroutine_handle<PromiseT> task) = 0;
 
   // Starts running the coroutines until `Stop()` is called or some other
   // temination condition is reached.
@@ -68,7 +69,8 @@ class Scheduler {
 
 using Cancelation = std::atomic<bool>;
 
-class RoundRobinScheduler : public Scheduler {
+template <typename PromiseT>
+class RoundRobinScheduler : public Scheduler<PromiseT> {
  public:
   ~RoundRobinScheduler() { ROME_TRACE("Task count: {}", task_count_); }
   RoundRobinScheduler() : task_count_(0), curr_(nullptr), canceled_(false) {}
@@ -77,7 +79,7 @@ class RoundRobinScheduler : public Scheduler {
   int task_count() const { return task_count_; }
 
   // Inserts the given task as the next task to run.
-  void Schedule(Coro task) override {
+  void Schedule(coroutine_handle<PromiseT> task) override {
     if (canceled_) return;
     auto coro = new CoroWrapper{task, nullptr, nullptr};
     if (curr_ == nullptr) {
@@ -146,7 +148,7 @@ class RoundRobinScheduler : public Scheduler {
  private:
   struct CoroWrapper {
     ~CoroWrapper() { handle.destroy(); }
-    coroutine_handle<Promise> handle;
+    coroutine_handle<PromiseT> handle;
     CoroWrapper* prev;
     CoroWrapper* next;
   };

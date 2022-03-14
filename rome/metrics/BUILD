@@ -1,12 +1,14 @@
 package(default_visibility = ["//rome:__subpackages__"])
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "metric",
     hdrs = ["metric.h"],
     deps = ["@absl//absl/status:statusor"],
 )
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "counter",
     hdrs = ["counter.h"],
     deps = [
@@ -16,6 +18,7 @@ cc_library(
 )
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "summary",
     hdrs = ["summary.h"],
     deps = [
@@ -39,6 +42,7 @@ cc_test(
 )
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "stopwatch",
     srcs = ["stopwatch.cc"],
     hdrs = ["stopwatch.h"],

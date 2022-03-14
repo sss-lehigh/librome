@@ -1,10 +1,12 @@
 #include "rdma_broker.h"
 
+#include <linux/limits.h>
 #include <rdma/rdma_cma.h>
 
 #include <barrier>
 #include <chrono>
 #include <random>
+#include <string>
 #include <thread>
 
 #include "gmock/gmock.h"
@@ -19,7 +21,6 @@ namespace {
 
 using ::util::InternalErrorBuilder;
 
-constexpr char kServer[] = "10.0.2.5";
 constexpr uint16_t kPort = 18018;
 
 class FakeRdmaReceiver : public RdmaReceiverInterface {
@@ -50,8 +51,10 @@ class FakeRdmaClient {
     hints.ai_port_space = RDMA_PS_TCP;
     hints.ai_flags = AI_NUMERICSERV;
 
-    int gai_ret = rdma_getaddrinfo(
-        server.data(), std::to_string(htons(port)).data(), &hints, &resolved);
+    char hostname[PATH_MAX];
+    gethostname(hostname, PATH_MAX);
+    int gai_ret = rdma_getaddrinfo(hostname, std::to_string(htons(port)).data(),
+                                   &hints, &resolved);
     ROME_CHECK_QUIET(
         ROME_RETURN(InternalErrorBuilder()
                     << "rdma_getaddrinfo(): " << gai_strerror(gai_ret)),
@@ -80,7 +83,7 @@ TEST(RdmaBrokerTest, InitSpecifiesPort) {
   // check that it is created successfully.
   ROME_INIT_LOG();
   FakeRdmaReceiver receiver;
-  auto broker = RdmaBroker::Create(kServer, kPort, &receiver);
+  auto broker = RdmaBroker::Create("", kPort, &receiver);
   EXPECT_NE(broker, nullptr);
 }
 
@@ -89,7 +92,7 @@ TEST(RdmaBrokerTest, InitDoesNotSpecifyPort) {
   // check that it is created successfully.
   ROME_INIT_LOG();
   FakeRdmaReceiver receiver;
-  auto broker = RdmaBroker::Create(kServer, std::nullopt, &receiver);
+  auto broker = RdmaBroker::Create("", std::nullopt, &receiver);
   EXPECT_NE(broker, nullptr);
 }
 
@@ -103,7 +106,7 @@ TEST(RdmaBrokerTest, ClientConnectsToKnownPort) {
 
   std::thread thread([&]() {
     FakeRdmaReceiver receiver;
-    auto broker = RdmaBroker::Create(kServer, kPort, &receiver);
+    auto broker = RdmaBroker::Create("", kPort, &receiver);
     init.arrive_and_wait();
     done.arrive_and_wait();
     EXPECT_OK(broker->Stop());
@@ -113,7 +116,7 @@ TEST(RdmaBrokerTest, ClientConnectsToKnownPort) {
 
   // Do work
   FakeRdmaClient client;
-  EXPECT_OK(client.Connect(kServer, kPort));
+  EXPECT_OK(client.Connect("", kPort));
 
   done.arrive_and_wait();
   thread.join();
@@ -128,7 +131,7 @@ TEST(RdmaBrokerTest, ClientConnectsToUnknownPort) {
   std::barrier done(2);
 
   FakeRdmaReceiver receiver;
-  auto broker = RdmaBroker::Create(kServer, std::nullopt, &receiver);
+  auto broker = RdmaBroker::Create("", std::nullopt, &receiver);
   std::thread thread([&]() {
     init.arrive_and_wait();
     done.arrive_and_wait();
@@ -139,7 +142,7 @@ TEST(RdmaBrokerTest, ClientConnectsToUnknownPort) {
 
   // Do work
   FakeRdmaClient client;
-  EXPECT_OK(client.Connect(kServer, broker->port()));
+  EXPECT_OK(client.Connect("", broker->port()));
 
   done.arrive_and_wait();
   thread.join();
@@ -155,7 +158,7 @@ TEST(RdmaBrokerTest, MultipleClientsConnect) {
 
   std::thread thread([&]() {
     FakeRdmaReceiver receiver;
-    auto broker = RdmaBroker::Create(kServer, kPort, &receiver);
+    auto broker = RdmaBroker::Create("", kPort, &receiver);
     init.arrive_and_wait();
     done.arrive_and_wait();
     EXPECT_OK(broker->Stop());
@@ -167,7 +170,7 @@ TEST(RdmaBrokerTest, MultipleClientsConnect) {
   static constexpr int kIters = 1000;
   for (int i = 0; i < kIters; ++i) {
     FakeRdmaClient client;
-    EXPECT_OK(client.Connect(kServer, kPort));
+    EXPECT_OK(client.Connect("", kPort));
   }
 
   done.arrive_and_wait();

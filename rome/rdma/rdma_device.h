@@ -16,8 +16,10 @@ namespace rome {
 // RAII.
 class RdmaDevice {
  public:
-  // Returns a vector of device names that are accessible on this machine.
-  static absl::StatusOr<std::vector<std::string>> GetAvailableDevices();
+  // Returns a vector of device name and active port pairs that are accessible
+  // on this machine.
+  static absl::StatusOr<std::vector<std::pair<std::string, int>>>
+  GetAvailableDevices();
 
   static std::unique_ptr<RdmaDevice> Create(std::string_view name,
                                             std::optional<int> port) {

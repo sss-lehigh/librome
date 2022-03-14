@@ -7,6 +7,7 @@
 #include <numeric>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/synchronization/mutex.h"
 #include "rome/util/clocks.h"
 #include "rome/util/duration_util.h"
 
@@ -32,7 +33,7 @@ class LeakyTokenBucketQpsController : public QpsController {
   }
 
   void Wait() LOCKS_EXCLUDED(mu_) override {
-    std::lock_guard lock(mu_);
+    absl::MutexLock lock(&mu_);
     do {
       TryRefreshTokens();
     } while (tokens_ == 0);
@@ -58,7 +59,7 @@ class LeakyTokenBucketQpsController : public QpsController {
     }
   }
 
-  std::mutex mu_;
+  absl::Mutex mu_;
   int64_t max_qps_ GUARDED_BY(mu_);
   int64_t tokens_ GUARDED_BY(mu_);
   std::chrono::time_point<Clock> last_refill_ GUARDED_BY(mu_);
@@ -69,7 +70,7 @@ class CyclingLeakyTokenBucketQpsController
     : public LeakyTokenBucketQpsController<Clock> {
  public:
   void Wait() override EXCLUSIVE_LOCKS_REQUIRED(this->mu_) {
-    std::lock_guard lock(this->mu_);
+    absl::MutexLock lock(&this->mu_);
     do {
       TryUpdateQps();
       this->TryRefreshTokens();

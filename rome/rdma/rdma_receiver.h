@@ -19,6 +19,8 @@ class RdmaReceiverInterface {
   // Prepares the new connection for the `rmda_accept` call. Receives `id`,
   // which is the new connection allocated upon receiving the connection
   // request. The implementation should then create or assign a QP to `id`.
+  // 
+  // TODO: https://github.com/jacnel/rome/issues/7
   virtual absl::StatusOr<rdma_conn_param*> OnConnectRequest(
       rdma_cm_id* id, rdma_cm_event* event) = 0;
 

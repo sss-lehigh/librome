@@ -39,5 +39,6 @@ using FailedPreconditionErrorBuilder =
 using InternalErrorBuilder = StatusBuilder<absl::StatusCode::kInternal>;
 using ResourceExhaustedErrorBuilder =
     StatusBuilder<absl::StatusCode::kResourceExhausted>;
+using AbortedErrorBuilder = StatusBuilder<absl::StatusCode::kAborted>;
 
 }  // namespace util

@@ -7,6 +7,7 @@ cc_library(
 )
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "streams",
     hdrs = ["streams.h"],
     deps = [":stream"],
@@ -26,6 +27,7 @@ cc_test(
 )
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "qps_controller",
     hdrs = ["qps_controller.h"],
     deps = [
@@ -51,6 +53,7 @@ cc_test(
 )
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "workload_driver",
     hdrs = ["workload_driver.h"],
     deps = [
@@ -75,6 +78,7 @@ cc_test(
 )
 
 cc_library(
+    visibility = ["//visibility:public"],
     name = "client_adaptor",
     hdrs = ["client_adaptor.h"],
     deps = [

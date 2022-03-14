@@ -40,7 +40,7 @@ TEST(RoundRobinSchedulerTest, RunsTasks) {
   // Each task will push a value onto a shared vector. After the coroutines
   // complete, check that the vector contains the expected values.
   ROME_INIT_LOG();
-  RoundRobinScheduler scheduler;
+  RoundRobinScheduler<Promise> scheduler;
 
   std::vector<int> values;
   for (int i = 0; i < kNumTasks; ++i) {
@@ -57,7 +57,7 @@ TEST(RoundRobinSchedulerTest, CancelsTasks) {
   // Test plan: Create a round-robin scheduler then schedule a number of tasks.
   // Each task will push a value onto a shared vector. After the coroutines
   // complete, check that the vector contains the expected values.
-  RoundRobinScheduler scheduler;
+  RoundRobinScheduler<Promise> scheduler;
 
   std::vector<int> values;
   scheduler.Schedule(cancellable_task(scheduler.Cancelation()));

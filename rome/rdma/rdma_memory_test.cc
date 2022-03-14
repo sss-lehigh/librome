@@ -16,8 +16,8 @@ class RdmaMemoryTest : public ::testing::Test {
   void SetUp() {
     auto devices = RdmaDevice::GetAvailableDevices();
     ASSERT_OK(devices);
-    auto dev_name = devices->front();
-    dev_ = RdmaDevice::Create(dev_name, std::nullopt);
+    auto device = devices->front();
+    dev_ = RdmaDevice::Create(device.first, std::nullopt);
     ASSERT_OK(dev_->CreateProtectionDomain("test"));
     auto pd = dev_->GetProtectionDomain("test");
     ASSERT_OK(pd);

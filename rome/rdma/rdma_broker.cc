@@ -46,6 +46,7 @@ using ::util::suspend_always;
 
 RdmaBroker ::~RdmaBroker() {
   [[maybe_unused]] auto s = Stop();
+  rdma_destroy_ep(listen_id_);
   if (listen_channel_ != nullptr) {
     rdma_destroy_event_channel(listen_channel_);
   }
@@ -54,10 +55,10 @@ RdmaBroker ::~RdmaBroker() {
 std::unique_ptr<RdmaBroker> RdmaBroker::Create(
     std::string_view device, std::optional<uint16_t> port,
     RdmaReceiverInterface* receiver) {
-  auto broker = std::unique_ptr<RdmaBroker>(new RdmaBroker(receiver));
+  auto* broker = new RdmaBroker(receiver);
   auto status = broker->Init(device, port);
   if (status.ok()) {
-    return broker;
+    return std::unique_ptr<RdmaBroker>(broker);
   } else {
     ROME_ERROR(status.ToString());
     return nullptr;
@@ -69,6 +70,7 @@ RdmaBroker::RdmaBroker(RdmaReceiverInterface* receiver)
       status_(absl::OkStatus()),
       listen_channel_(nullptr),
       listen_id_(nullptr),
+      num_connections_(0),
       receiver_(receiver) {}
 
 absl::Status RdmaBroker::Init(std::string_view address,
@@ -78,55 +80,59 @@ absl::Status RdmaBroker::Init(std::string_view address,
   ROME_CHECK_QUIET(ROME_RETURN(devices.status()), devices.ok());
 
   rdma_addrinfo hints, *resolved;
-  ibv_qp_init_attr init_attr;
 
   // Get the local connection information.
   std::memset(&hints, 0, sizeof(hints));
-  hints.ai_flags = RAI_PASSIVE | AI_NUMERICSERV;
+  hints.ai_flags = RAI_PASSIVE;
   hints.ai_port_space = RDMA_PS_TCP;
 
-  int gai_ret = rdma_getaddrinfo(
-      address.data(),
-      port.has_value() ? std::to_string(htons(port.value())).data() : nullptr,
-      &hints, &resolved);
+  std::string port_str =
+      port.has_value() ? std::to_string(htons(port.value())) : "";
+  int gai_ret = rdma_getaddrinfo(address.empty() ? nullptr : address.data(),
+                                 port_str.data(), &hints, &resolved);
   ROME_CHECK_QUIET(ROME_RETURN(InternalErrorBuilder() << "rdma_getaddrinfo(): "
                                                       << gai_strerror(gai_ret)),
                    gai_ret == 0);
 
   // Create an endpoint to receive incoming requests on.
+  ibv_qp_init_attr init_attr;
   std::memset(&init_attr, 0, sizeof(init_attr));
   init_attr.cap.max_send_wr = init_attr.cap.max_recv_wr = 16;
   init_attr.cap.max_send_sge = init_attr.cap.max_recv_sge = 1;
   init_attr.cap.max_inline_data = 0;
   init_attr.sq_sig_all = 1;
-  RDMA_CM_CHECK(rdma_create_ep, &listen_id_, resolved, nullptr, &init_attr);
+  auto err = rdma_create_ep(&listen_id_, resolved, nullptr, &init_attr);
+  rdma_freeaddrinfo(resolved);
+  if (err) {
+    return InternalErrorBuilder() << "rdma_create_ep(): " << strerror(errno);
+  }
 
   // Migrate the new endpoint to an async channel
   listen_channel_ = rdma_create_event_channel();
-  RDMA_CM_CHECK(fcntl, listen_channel_->fd, F_SETFL,
-                fcntl(listen_channel_->fd, F_GETFL) | O_NONBLOCK);
   RDMA_CM_CHECK(rdma_migrate_id, listen_id_, listen_channel_);
+  RDMA_CM_CHECK(fcntl, listen_id_->channel->fd, F_SETFL,
+                fcntl(listen_id_->channel->fd, F_GETFL) | O_NONBLOCK);
 
   // Start listening for incoming requests on the endpoint.
   RDMA_CM_CHECK(rdma_listen, listen_id_, 0);
 
-  address_ =
+  address_ = std::string(
       inet_ntoa(reinterpret_cast<sockaddr_in*>(rdma_get_local_addr(listen_id_))
-                    ->sin_addr);
+                    ->sin_addr));
+
   port_ = rdma_get_src_port(listen_id_);
   ROME_INFO("Listening: {}:{}", address_, port_);
 
-  rdma_freeaddrinfo(resolved);
-
-  broker_ = std::unique_ptr<std::thread, thread_deleter>(
-      new std::thread([&]() { this->Run(); }));
+  runner_.reset(new std::thread([&]() { this->Run(); }));
 
   return absl::OkStatus();
 }
 
+// When shutting down the broker we must be careful. First, we signal to the
+// connection request handler that we are not accepting new requests.
 absl::Status RdmaBroker::Stop() {
   terminate_ = true;
-  broker_.reset();
+  runner_.reset();
   return status_;
 }
 
@@ -135,6 +141,10 @@ Coro RdmaBroker::HandleConnectionRequests() {
   int ret;
   while (true) {
     do {
+      // If we are shutting down, and there are no connections left then we
+      // should finish.
+      if (terminate_) co_return;
+
       // Attempt to read from `listen_channel_`
       ret = rdma_get_cm_event(listen_channel_, &event);
       if (ret != 0 && errno != EAGAIN) {
@@ -143,27 +153,28 @@ Coro RdmaBroker::HandleConnectionRequests() {
         co_return;
       }
       co_await suspend_always{};
-    } while ((ret != 0 && errno == EAGAIN) && !terminate_);
+    } while ((ret != 0 && errno == EAGAIN));
 
-    // TODO: Perform cleanup.
-    if (terminate_) co_return;
-
-    ROME_DEBUG("Got event: {} (id={})", rdma_event_str(event->event),
-               fmt::ptr(event->id));
+    ROME_DEBUG("({}) Got event: {} (id={})", fmt::ptr(this),
+               rdma_event_str(event->event), fmt::ptr(event->id));
     switch (event->event) {
       case RDMA_CM_EVENT_TIMEWAIT_EXIT:  // Nothing to do.
-        ROME_WARN("rdma_cm: Timed out");
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        rdma_ack_cm_event(event);
         break;
       case RDMA_CM_EVENT_CONNECT_REQUEST: {
-        rdma_cm_id* new_id = event->id;
-        auto conn_param_or = receiver_->OnConnectRequest(new_id, event);
-        rdma_ack_cm_event(event);
+        rdma_cm_id* id = event->id;
+        auto conn_param_or = receiver_->OnConnectRequest(id, event);
+
+        // If the receiver accepted the connection and
         if (conn_param_or.ok()) {
-          RDMA_CM_ASSERT(rdma_accept, new_id, conn_param_or.value());
+          RDMA_CM_ASSERT(rdma_accept, id, conn_param_or.value());
         } else {
-          RDMA_CM_ASSERT(rdma_reject, new_id, nullptr, 0);
+          ROME_DEBUG(conn_param_or.status().ToString());
+          rdma_reject(event->id, nullptr, 0);
+          rdma_destroy_ep(id);
         }
+        rdma_ack_cm_event(event);
+
         break;
       }
       case RDMA_CM_EVENT_ESTABLISHED: {
@@ -173,11 +184,21 @@ Coro RdmaBroker::HandleConnectionRequests() {
         // another coroutine that we can resume every round.
         receiver_->OnEstablished(id, event);
         rdma_ack_cm_event(event);
+
+        num_connections_.fetch_add(1);
+        ROME_DEBUG("({}) Num connections: {}", fmt::ptr(this),
+                   num_connections_);
       } break;
       case RDMA_CM_EVENT_DISCONNECTED: {
         rdma_cm_id* id = event->id;
         receiver_->OnDisconnect(id, event);
         rdma_ack_cm_event(event);
+
+        // `num_connections_` will only reach zero once all connections have
+        // recevied their disconnect messages.
+        num_connections_.fetch_add(-1);
+        ROME_DEBUG("({}) Num connections: {}", fmt::ptr(this),
+                   num_connections_);
       } break;
       case RDMA_CM_EVENT_DEVICE_REMOVAL:
         // TODO: Cleanup

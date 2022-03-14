@@ -26,65 +26,58 @@ TEST(SimpleRdmaDeviceTest, GetDeviceNamesReturnsAvailableDevices) {
   // expected devices appear.
   std::vector<std::string> want;
   int num_devices;
-  auto **device_list = ibv_get_device_list(&num_devices);
-  auto got = RdmaDevice::GetAvailableDevices();
+  auto available = RdmaDevice::GetAvailableDevices();
+  ibv_get_device_list(&num_devices);
   if (num_devices == 0) {
     // There might be no available devices...
     ROME_WARN("No devices found");
-    EXPECT_THAT(got, StatusIs(absl::StatusCode::kNotFound));
-    EXPECT_THAT(got, HasMessage("No devices found"));
+    EXPECT_THAT(available, StatusIs(absl::StatusCode::kNotFound));
+    EXPECT_THAT(available, HasMessage("No devices found"));
   } else {
-    ASSERT_OK(got);
-    ASSERT_EQ(got->size(), num_devices);
-    for (int i = 0; i < num_devices; ++i) {
-      auto dev_name = device_list[i]->name;
-      EXPECT_NE(std::find(got->begin(), got->end(), dev_name), got->end());
+    ASSERT_OK(available);
+    for (auto& a : *available) {
+      auto dev = RdmaDevice::Create(a.first, a.second);
+      EXPECT_NE(dev, nullptr);
     }
   }
 }
 
 TEST(SimpleRdmaDeviceTest, OpenDeviceOnFirstAvailablePort) {
   // Test-plan: Attempt to open a device without providing a port number.
-  auto got = RdmaDevice::GetAvailableDevices();
-  ASSERT_THAT(got, IsOkAndHolds(ResultOf(
-                       std::bind(&std::vector<std::string>::size, got.value()),
-                       Gt(0))));
-  for (auto d : got.value()) {
+  auto available = RdmaDevice::GetAvailableDevices();
+  ASSERT_THAT(available,
+              IsOkAndHolds(ResultOf(
+                  std::bind(&std::vector<std::pair<std::string, int>>::size,
+                            available.value()),
+                  Gt(0))));
+  std::string last = "";
+  for (auto a : available.value()) {
     // Here, since we use RAII the construction of the device is the
     // initialization of the underlying resource. Therefore, a succeeding
     // constructor indicates that the device has been successfully open and a
     // port found.
-    ROME_INFO("Testing device: {}", d);
-    auto device = RdmaDevice::Create(d, std::nullopt);
-    EXPECT_NE(device, nullptr);
-  }
-}
+    if (last == a.first) continue;
 
-TEST(SimpleRdmaDeviceTest, OpenDeviceOnGivenPort) {
-  // Test-plan: Open a device and get its port. Then, reopen it with the given
-  // port and check that it succeeds.
-  auto got = RdmaDevice::GetAvailableDevices();
-  ASSERT_THAT(got, IsOkAndHolds(ResultOf(
-                       std::bind(&std::vector<std::string>::size, got.value()),
-                       Gt(0))));
-  for (auto d : got.value()) {
-    auto first = RdmaDevice::Create(d, std::nullopt);
-    ASSERT_NE(first, nullptr);
-    auto second = RdmaDevice::Create(d, first->port());
+    last = a.first;
+    ROME_INFO("Testing device: {}", a.first);
+    auto device = RdmaDevice::Create(a.first, std::nullopt);
+    EXPECT_NE(device, nullptr);
+    EXPECT_EQ(device->port(), a.second);
   }
 }
 
 class RdmaDeviceTest : public ::testing::Test {
  protected:
   void SetUp() {
-    auto devices = RdmaDevice::GetAvailableDevices();
-    ASSERT_THAT(devices,
+    auto available = RdmaDevice::GetAvailableDevices();
+    ASSERT_THAT(available,
                 IsOkAndHolds(ResultOf(
-                    std::bind(&std::vector<std::string>::size, devices.value()),
+                    std::bind(&std::vector<std::pair<std::string, int>>::size,
+                              available.value()),
                     Gt(0))));
 
-    for (auto d : devices.value()) {
-      dev = RdmaDevice::Create(d, std::nullopt);  // Get whatever port.
+    for (auto d : available.value()) {
+      dev = RdmaDevice::Create(d.first, std::nullopt);  // Get whatever port.
       if (dev == nullptr) continue;
     }
     ASSERT_NE(dev, nullptr);

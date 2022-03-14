@@ -15,30 +15,59 @@ using ::util::NotFoundErrorBuilder;
 using ::util::UnavailableErrorBuilder;
 using ::util::UnknownErrorBuilder;
 
-/* static */ absl::StatusOr<std::vector<std::string>>
-RdmaDevice::GetAvailableDevices() {
-  int num_devices;
-  auto **device_list = ibv_get_device_list(&num_devices);
-  ROME_CHECK_QUIET(ROME_RETURN(absl::NotFoundError("No devices found")),
-                   num_devices > 0);
-  std::vector<std::string> dev_names;
-  dev_names.reserve(num_devices);
-  for (int i = 0; i < num_devices; ++i) {
-    dev_names.push_back(device_list[i]->name);
-  }
-  ibv_free_device_list(device_list);
-  return dev_names;
-}
-
-RdmaDevice::~RdmaDevice() { protection_domains_.clear(); }
-
 namespace {
 
 bool IsActivePort(const ibv_port_attr &port_attr) {
   return port_attr.state == IBV_PORT_ACTIVE;
 }
 
+absl::StatusOr<std::vector<int>> FindActivePorts(ibv_context *context) {
+  // Find the first active port, failing if none exists.
+  ibv_device_attr dev_attr;
+  ibv_query_device(context, &dev_attr);
+  std::vector<int> ports;
+  for (int i = 1; i <= dev_attr.phys_port_cnt; ++i) {
+    ibv_port_attr port_attr;
+    ibv_query_port(context, i, &port_attr);
+    if (!IsActivePort(port_attr)) {
+      continue;
+    } else {
+      ports.push_back(i);
+    }
+  }
+
+  if (ports.empty()) {
+    return absl::UnavailableError("No active ports");
+  } else {
+    return ports;
+  }
+}
+
 }  // namespace
+
+/* static */ absl::StatusOr<std::vector<std::pair<std::string, int>>>
+RdmaDevice::GetAvailableDevices() {
+  int num_devices;
+  auto **device_list = ibv_get_device_list(&num_devices);
+  ROME_CHECK_QUIET(ROME_RETURN(absl::NotFoundError("No devices found")),
+                   num_devices > 0);
+  std::vector<std::pair<std::string, int>> active;
+  for (int i = 0; i < num_devices; ++i) {
+    auto *context = ibv_open_device(device_list[i]);
+    if (context) {
+      auto ports_or = FindActivePorts(context);
+      if (!ports_or.ok()) continue;
+      for (auto p : ports_or.value()) {
+        active.emplace_back(context->device->name, p);
+      }
+    }
+  }
+
+  ibv_free_device_list(device_list);
+  return active;
+}
+
+RdmaDevice::~RdmaDevice() { protection_domains_.clear(); }
 
 absl::Status RdmaDevice::OpenDevice(std::string_view dev_name) {
   int num_devices;
@@ -49,19 +78,21 @@ absl::Status RdmaDevice::OpenDevice(std::string_view dev_name) {
       num_devices > 0 && device_list != nullptr);
 
   // Find device called `dev_name`
-  ibv_device *dev = nullptr;
+  ibv_device *found = nullptr;
   for (int i = 0; i < num_devices; ++i) {
-    dev = device_list.get()[i];
+    auto *dev = device_list.get()[i];
     if (dev->name == dev_name) {
+      ROME_DEBUG("Device found: {}", dev->name);
+      found = dev;
       continue;
     }
   }
   ROME_CHECK_QUIET(
-      ROME_RETURN(NotFoundErrorBuilder() << "Device not found:" << dev_name),
-      dev != nullptr);
+      ROME_RETURN(NotFoundErrorBuilder() << "Device not found: " << dev_name),
+      found != nullptr);
 
   // Try opening the device on the provided port, or the first available.
-  dev_context_ = ibv_context_unique_ptr(ibv_open_device(dev));
+  dev_context_ = ibv_context_unique_ptr(ibv_open_device(found));
   ROME_CHECK_QUIET(ROME_RETURN(UnavailableErrorBuilder()
                                << "Could not open device:" << dev_name),
                    dev_context_ != nullptr);
@@ -69,31 +100,23 @@ absl::Status RdmaDevice::OpenDevice(std::string_view dev_name) {
 }
 
 absl::Status RdmaDevice::ResolvePort(std::optional<int> port) {
+  auto ports_or = FindActivePorts(dev_context_.get());
+  ROME_CHECK_QUIET(
+      ROME_RETURN(UnavailableErrorBuilder()
+                  << "No active ports:" << dev_context_->device->name),
+      ports_or.ok());
+  auto ports = ports_or.value();
   if (port.has_value()) {
-    // Check that the given port is active, failing if not.
-    ibv_port_attr port_attr;
-    ibv_query_port(dev_context_.get(), port.value(), &port_attr);
-    ROME_CHECK_QUIET(
-        ROME_RETURN(UnavailableErrorBuilder()
-                    << "Port not active:" << std::to_string(port.value())),
-        IsActivePort(port_attr));
-    port_ = port.value();
-    return absl::OkStatus();
-  } else {
-    // Find the first active port, failing if none exists.
-    ibv_device_attr dev_attr;
-    ibv_query_device(dev_context_.get(), &dev_attr);
-    for (int i = 1; i <= dev_attr.phys_port_cnt; ++i) {
-      ibv_port_attr port_attr;
-      ibv_query_port(dev_context_.get(), i, &port_attr);
-      if (!IsActivePort(port_attr)) {
-        continue;
-      } else {
-        port_ = i;
+    for (auto p : ports) {
+      if (p == port.value()) {
+        port_ = p;
         return absl::OkStatus();
       }
     }
-    return absl::UnavailableError("No active ports");
+    return UnavailableErrorBuilder() << "Port not active: " << port.value();
+  } else {
+    port_ = ports[0];  // Use the first active port
+    return absl::OkStatus();
   }
 }
 

@@ -88,8 +88,8 @@ absl::Status RdmaBroker::Init(std::string_view address,
 
   std::string port_str =
       port.has_value() ? std::to_string(htons(port.value())) : "";
-  int gai_ret =
-      rdma_getaddrinfo(address.data(), port_str.data(), &hints, &resolved);
+  int gai_ret = rdma_getaddrinfo(address.empty() ? nullptr : address.data(),
+                                 port_str.data(), &hints, &resolved);
   ROME_CHECK_QUIET(ROME_RETURN(InternalErrorBuilder() << "rdma_getaddrinfo(): "
                                                       << gai_strerror(gai_ret)),
                    gai_ret == 0);

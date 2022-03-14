@@ -84,9 +84,12 @@ class RdmaBroker {
 
   // The working thread that listens and responds to incoming messages.
   struct thread_deleter {
-    void operator()(std::thread* thread) { thread->join(); }
+    void operator()(std::thread* thread) {
+      thread->join();
+      free(thread);
+    }
   };
-  std::unique_ptr<std::thread, thread_deleter> broker_;
+  std::unique_ptr<std::thread, thread_deleter> runner_;
 
   // Status of the broker at any given time.
   absl::Status status_;

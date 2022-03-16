@@ -69,6 +69,7 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
+        "//rome/testutil:status_matcher",
         "@spdlog",
     ],
 )

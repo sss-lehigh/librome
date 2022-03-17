@@ -3,6 +3,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <sstream>
@@ -41,6 +42,13 @@ inline uint64_t RdtscpRelease() {
 
 }  // namespace
 
+Stopwatch::Stopwatch(std::string_view name, uint64_t tsc_freq_khz)
+    : Metric(name),
+      tsc_freq_khz_(tsc_freq_khz),
+      start_(RdtscpAcquire()),
+      end_(0),
+      lap_(start_) {}
+
 /*static*/ std::unique_ptr<Stopwatch> Stopwatch::Create(std::string_view name) {
   // Attempt to read the TSC frequency from the tsc_freq_khz file first, then
   // try to read the maximum cpu frequency. The latter is not perfect for modern
@@ -70,16 +78,11 @@ inline uint64_t RdtscpRelease() {
   return std::unique_ptr<Stopwatch>(new Stopwatch(name, tsc_freq_khz));
 }
 
-Stopwatch::Split::Split(uint32_t tsc_freq_khz)
-    : running_(true), tsc_freq_khz_(tsc_freq_khz) {
-  start_ = RdtscpAcquire();
-}
+Stopwatch::Split::Split(uint32_t tsc_freq_khz, uint64_t start, uint64_t end)
+    : tsc_freq_khz_(tsc_freq_khz), start_(start), end_(end) {}
 
-void Stopwatch::Split::Stop() {
-  if (!running_) return;
-  end_ = RdtscpRelease();
-  running_ = false;
-}
+Stopwatch::Split::Split(uint32_t tsc_freq_khz, uint64_t start)
+    : Split(tsc_freq_khz, start, RdtscpAcquire()) {}
 
 namespace {
 constexpr double KhzToGhz(int khz) { return double(khz) / 1e6; }
@@ -87,21 +90,24 @@ constexpr double KhzToGhz(int khz) { return double(khz) / 1e6; }
 
 // # cycles / Ghz = # cycles / (cycles / nanosecond) = nanoseconds
 std::chrono::nanoseconds Stopwatch::Split::GetRuntimeNanoseconds() {
-  if (running_) return std::chrono::nanoseconds(0);
-  // std::cerr << "ticks: " << end_ - start_ << ", freq: " << tsc_freq_khz_
-  //           << std::endl;
   return std::chrono::nanoseconds(
       uint64_t((end_ - start_) / KhzToGhz(tsc_freq_khz_)));
 }
 
-std::unique_ptr<Stopwatch::Split> Stopwatch::NewSplit() {
-  return std::make_unique<Split>(tsc_freq_khz_);
+Stopwatch::Split Stopwatch::GetSplit() { return Split(tsc_freq_khz_, start_); }
+
+Stopwatch::Split Stopwatch::GetLap() {
+  auto split = Split(tsc_freq_khz_, lap_);
+  lap_ = RdtscpAcquire();
+  return split;
 }
 
-void Stopwatch::Stop() { split_.Stop(); }
+Stopwatch::Split Stopwatch::GetLapSplit() { return Split(tsc_freq_khz_, lap_); }
+
+void Stopwatch::Stop() { end_ = RdtscpRelease(); }
 
 std::chrono::nanoseconds Stopwatch::GetRuntimeNanoseconds() {
-  return split_.GetRuntimeNanoseconds();
+  return Split(tsc_freq_khz_, start_, end_).GetRuntimeNanoseconds();
 }
 
 std::string Stopwatch::ToString() {

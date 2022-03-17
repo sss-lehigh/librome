@@ -1,3 +1,5 @@
+#pragma once
+
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -15,29 +17,20 @@ class Stopwatch : public Metric {
   //
   class Split {
    public:
-    explicit Split(uint32_t tsc_freq_khz);
+    Split(uint32_t tsc_freq_khz, uint64_t start);
+    Split(uint32_t tsc_freq_khz, uint64_t start, uint64_t end);
 
-    // No copy
-    Split(const Split&) = delete;
-
-    // But can move
-    Split(Split&& other)
-        : start_(std::move(other.start_)),
-          end_(std::move(other.end_)),
-          tsc_freq_khz_(std::move(other.tsc_freq_khz_)) {}
-
-    // Stops the split and sets its endpoint. After a call to stop, `end_` is
-    // immutable.
-    void Stop();
+    // Default move and copy.
+    Split(const Split&) = default;
+    Split(Split&& other) = default;
 
     // Returns the length of the split in nanoseconds.
     std::chrono::nanoseconds GetRuntimeNanoseconds();
 
    private:
-    bool running_;
+    uint32_t tsc_freq_khz_;
     uint64_t start_;
     uint64_t end_;
-    uint32_t tsc_freq_khz_;
   };
 
   // Initializes the tsc frequency from either a known file or a compile time
@@ -47,7 +40,11 @@ class Stopwatch : public Metric {
 
   // Returns a new `Split` object that is used to measure a portion of the
   // overall runtime.
-  std::unique_ptr<Stopwatch::Split> NewSplit();
+  Split GetSplit();
+
+  Split GetLap();
+
+  Split GetLapSplit();
 
   // Stops the stopwatch. Future calls to `Split` will still generate new splits
   // that can be used for timing, but the internal split maintained by the
@@ -61,11 +58,12 @@ class Stopwatch : public Metric {
   std::string ToString() override;
 
  private:
-  Stopwatch(std::string_view name, uint64_t tsc_freq_khz)
-      : Metric(name), tsc_freq_khz_(tsc_freq_khz), split_(tsc_freq_khz_) {}
+  Stopwatch(std::string_view name, uint64_t tsc_freq_khz);
 
   uint64_t tsc_freq_khz_;
-  Split split_;
+  uint64_t start_;
+  uint64_t end_;
+  uint64_t lap_;
 };
 
 }  // namespace rome::metrics

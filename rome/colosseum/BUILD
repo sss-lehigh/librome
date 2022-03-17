@@ -7,9 +7,9 @@ cc_library(
 )
 
 cc_library(
-    visibility = ["//visibility:public"],
     name = "streams",
     hdrs = ["streams.h"],
+    visibility = ["//visibility:public"],
     deps = [":stream"],
 )
 
@@ -27,9 +27,9 @@ cc_test(
 )
 
 cc_library(
-    visibility = ["//visibility:public"],
     name = "qps_controller",
     hdrs = ["qps_controller.h"],
+    visibility = ["//visibility:public"],
     deps = [
         "//rome/testutil:fake_clock",
         "//rome/util:clocks",
@@ -53,9 +53,9 @@ cc_test(
 )
 
 cc_library(
-    visibility = ["//visibility:public"],
     name = "workload_driver",
     hdrs = ["workload_driver.h"],
+    visibility = ["//visibility:public"],
     deps = [
         "//rome/metrics:counter",
         "//rome/metrics:stopwatch",
@@ -78,9 +78,9 @@ cc_test(
 )
 
 cc_library(
-    visibility = ["//visibility:public"],
     name = "client_adaptor",
     hdrs = ["client_adaptor.h"],
+    visibility = ["//visibility:public"],
     deps = [
         "@absl//absl/status",
     ],

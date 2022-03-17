@@ -52,7 +52,8 @@ TEST(WorkloadDriverTest, ClientHandlesSingleOp) {
   auto stream = std::make_unique<TestStream<FakeClientOp>>(
       std::vector<FakeClientOp>{{expected_s, "Hello"}});
   auto driver = WorkloadDriver<FakeClientOp>::Create(
-      std::move(client), std::move(stream), nullptr);
+      std::move(client), std::move(stream), nullptr,
+      std::chrono::milliseconds(0));
 
   EXPECT_OK(driver->Start());
   auto start = SystemClock::now();
@@ -77,7 +78,8 @@ TEST(WorkloadDriverTest, ClientHandlesMultipleOps) {
                                 {wait, " "},
                                 {wait, "World!"}});
   auto driver = WorkloadDriver<FakeClientOp>::Create(
-      std::move(client), std::move(stream), nullptr);
+      std::move(client), std::move(stream), nullptr,
+      std::chrono::milliseconds(0));
   ASSERT_OK(driver->Start());
   auto start = SystemClock::now();
   while (SystemClock::now() - start < std::chrono::seconds(1))
@@ -94,7 +96,8 @@ TEST(WorkloadDriverTest, CannotRestartStoppedDriver) {
   auto stream = std::make_unique<TestStream<FakeClientOp>>(
       std::vector<FakeClientOp>{{std::chrono::seconds(0), ""}});
   auto driver = WorkloadDriver<FakeClientOp>::Create(
-      std::move(client), std::move(stream), nullptr);
+      std::move(client), std::move(stream), nullptr,
+      std::chrono::milliseconds(0));
   ASSERT_OK(driver->Start());
   ASSERT_OK(driver->Stop());
   EXPECT_THAT(driver->Start(), StatusIs(absl::StatusCode::kUnavailable));
@@ -107,7 +110,8 @@ TEST(WorkloadDriverTest, CannotStopStoppedDriver) {
   auto stream = std::make_unique<TestStream<FakeClientOp>>(
       std::vector<FakeClientOp>{{std::chrono::seconds(0), ""}});
   auto driver = WorkloadDriver<FakeClientOp>::Create(
-      std::move(client), std::move(stream), nullptr);
+      std::move(client), std::move(stream), nullptr,
+      std::chrono::milliseconds(0));
   ASSERT_OK(driver->Start());
   ASSERT_OK(driver->Stop());
   EXPECT_THAT(driver->Stop(), StatusIs(absl::StatusCode::kUnavailable));

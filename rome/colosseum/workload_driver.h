@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <future>
 #include <memory>
@@ -11,6 +12,7 @@
 #include "rome/metrics/counter.h"
 #include "rome/metrics/stopwatch.h"
 #include "rome/metrics/summary.h"
+#include "rome/util/duration_util.h"
 
 namespace rome {
 
@@ -29,9 +31,11 @@ class WorkloadDriver {
   // throughput of operations fed to the client.
   static std::unique_ptr<WorkloadDriver> Create(
       std::unique_ptr<ClientAdaptor<OpType>> client,
-      std::unique_ptr<Stream<OpType>> stream, QpsController* qps_controller) {
+      std::unique_ptr<Stream<OpType>> stream, QpsController* qps_controller,
+      std::optional<std::chrono::milliseconds> qps_sampling_rate) {
     return std::unique_ptr<WorkloadDriver>(new WorkloadDriver(
-        std::move(client), std::move(stream), qps_controller));
+        std::move(client), std::move(stream), qps_controller,
+        qps_sampling_rate.value_or(std::chrono::milliseconds(0))));
   }
 
   // Calls the client's `Start` method before starting the workload driver,
@@ -50,6 +54,7 @@ class WorkloadDriver {
   std::string ToString() {
     std::stringstream ss;
     ss << ops_ << std::endl;
+    ss << qps_summary_ << std::endl;
     ss << *stopwatch_;
     return ss.str();
   }
@@ -59,13 +64,16 @@ class WorkloadDriver {
 
   WorkloadDriver(std::unique_ptr<ClientAdaptor<OpType>> client,
                  std::unique_ptr<Stream<OpType>> stream,
-                 QpsController* qps_controller)
+                 QpsController* qps_controller,
+                 std::chrono::milliseconds qps_sampling_rate)
       : terminated_(false),
         client_(std::move(client)),
         stream_(std::move(stream)),
         qps_controller_(qps_controller),
         ops_("total_ops"),
-        stopwatch_(nullptr) {}
+        stopwatch_(nullptr),
+        qps_sampling_rate_(qps_sampling_rate),
+        qps_summary_("actual_qps", "ops/ms", 1000) {}
 
   std::atomic<bool> terminated_;
 
@@ -77,6 +85,10 @@ class WorkloadDriver {
 
   metrics::Counter<uint64_t> ops_;
   std::unique_ptr<metrics::Stopwatch> stopwatch_;
+
+  uint64_t prev_ops_;
+  std::chrono::milliseconds qps_sampling_rate_;
+  metrics::Summary<double> qps_summary_;
 
   std::future<absl::Status> run_status_;
   std::unique_ptr<std::thread> run_thread_;
@@ -151,7 +163,17 @@ absl::Status WorkloadDriver<OpType>::Run() {
       status = client_status;
       break;
     }
+
     ++ops_;
+    if (auto curr_lap = stopwatch_->GetLapSplit();
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            curr_lap.GetRuntimeNanoseconds()) > qps_sampling_rate_) {
+      auto sample = (ops_.GetCounter() - prev_ops_) /
+                    util::ToDoubleMilliseconds(
+                        stopwatch_->GetLap().GetRuntimeNanoseconds());
+      qps_summary_ << sample;
+      prev_ops_ = ops_.GetCounter();
+    }
   }
   stopwatch_->Stop();
   return status;

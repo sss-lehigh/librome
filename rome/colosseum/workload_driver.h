@@ -72,6 +72,7 @@ class WorkloadDriver {
         qps_controller_(qps_controller),
         ops_("total_ops"),
         stopwatch_(nullptr),
+        prev_ops_(0),
         qps_sampling_rate_(qps_sampling_rate),
         qps_summary_("actual_qps", "ops/ms", 1000) {}
 

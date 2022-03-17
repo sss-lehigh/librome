@@ -47,9 +47,9 @@ using ::util::suspend_always;
 RdmaBroker ::~RdmaBroker() {
   [[maybe_unused]] auto s = Stop();
   rdma_destroy_ep(listen_id_);
-  if (listen_channel_ != nullptr) {
-    rdma_destroy_event_channel(listen_channel_);
-  }
+  // if (listen_channel_ != nullptr) {
+  //   rdma_destroy_event_channel(listen_channel_);
+  // }
 }
 
 std::unique_ptr<RdmaBroker> RdmaBroker::Create(
@@ -163,18 +163,7 @@ Coro RdmaBroker::HandleConnectionRequests() {
         break;
       case RDMA_CM_EVENT_CONNECT_REQUEST: {
         rdma_cm_id* id = event->id;
-        auto conn_param_or = receiver_->OnConnectRequest(id, event);
-
-        // If the receiver accepted the connection and
-        if (conn_param_or.ok()) {
-          RDMA_CM_ASSERT(rdma_accept, id, conn_param_or.value());
-        } else {
-          ROME_DEBUG(conn_param_or.status().ToString());
-          rdma_reject(event->id, nullptr, 0);
-          rdma_destroy_ep(id);
-        }
-        rdma_ack_cm_event(event);
-
+        receiver_->OnConnectRequest(id, event);
         break;
       }
       case RDMA_CM_EVENT_ESTABLISHED: {
@@ -183,7 +172,6 @@ Coro RdmaBroker::HandleConnectionRequests() {
         // using it to communicate with the other node. This is handled in
         // another coroutine that we can resume every round.
         receiver_->OnEstablished(id, event);
-        rdma_ack_cm_event(event);
 
         num_connections_.fetch_add(1);
         ROME_DEBUG("({}) Num connections: {}", fmt::ptr(this),
@@ -191,8 +179,8 @@ Coro RdmaBroker::HandleConnectionRequests() {
       } break;
       case RDMA_CM_EVENT_DISCONNECTED: {
         rdma_cm_id* id = event->id;
-        receiver_->OnDisconnect(id, event);
         rdma_ack_cm_event(event);
+        receiver_->OnDisconnect(id);
 
         // `num_connections_` will only reach zero once all connections have
         // recevied their disconnect messages.

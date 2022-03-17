@@ -5,7 +5,7 @@ import shutil
 import hashlib
 
 config = configparser.ConfigParser(
-        interpolation=configparser.ExtendedInterpolation())
+    interpolation=configparser.ExtendedInterpolation())
 
 
 def init(configfile):
@@ -76,9 +76,11 @@ def __add_bashrc(line):
     checked_call("echo '" + line + "'  >>~/.bashrc")
 
 
+# When adding a new path, we first check if the path exists then add it to both the `.bashrc` file and to the `PATH` environment variable.
 def try_add_path(path):
     if not __check_bashrc(path):
         __add_bashrc('export PATH=$PATH:' + path)
+        checked_call('export PATH=$PATH:' + path)
 
 
 def try_add_bashrc(line):

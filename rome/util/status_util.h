@@ -5,13 +5,13 @@
 
 #include "absl/status/status.h"
 
-#define VALUE_OR_DIE(status_or)                 \
-  [](const auto& status_or) {                   \
-    if (!status_or.ok()) {                      \
-      ROME_FATAL(status_or.status().ToString()) \
-    }                                           \
-    return status_or.value();                   \
-  }(status_or)
+#define VALUE_OR_DIE(status_or)            \
+  [&](const auto& s_or) {                  \
+    if (!(s_or).ok()) {                    \
+      ROME_FATAL(s_or.status().ToString()) \
+    }                                      \
+    return status_or.value();              \
+  }((status_or))
 
 namespace util {
 

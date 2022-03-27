@@ -18,4 +18,5 @@ __pycache__
 compile_commands.json
 
 # Third party packages and libraries
-third-party/*
+scripts/third_party/*
+scripts/nodefiles/*

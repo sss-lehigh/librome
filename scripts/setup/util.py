@@ -67,22 +67,22 @@ def checked_call(cmd):
     subprocess.run(cmd, shell=True, check=True)
 
 
-def __check_bashrc(line):
+def __check_env(line):
     return subprocess.run(
-        "cat ~/.bashrc | grep -q '" + line + "'", shell=True).returncode == 0
+        "cat " + config['workspace']['env_file'] + " | grep -q '" + line + "'", shell=True).returncode == 0
 
 
-def __add_bashrc(line):
-    checked_call("echo '" + line + "'  >>~/.bashrc")
+def __add_env(line):
+    checked_call("echo '" + line + "'  | sudo tee -a " + config['workspace']['env_file'])
 
 
 # When adding a new path, we first check if the path exists then add it to both the `.bashrc` file and to the `PATH` environment variable.
 def try_add_path(path):
-    if not __check_bashrc(path):
-        __add_bashrc('export PATH=$PATH:' + path)
+    if not __check_env(path):
+        __add_env('export PATH=$PATH:' + path)
         checked_call('export PATH=$PATH:' + path)
 
 
 def try_add_bashrc(line):
-    if not __check_bashrc(line):
-        checked_call("echo '" + line + "' >>~/.bashrc")
+    if not __check_env(line):
+        checked_call("echo '" + line + "' | sudo tee -a " + config['workspace']['env_file'])

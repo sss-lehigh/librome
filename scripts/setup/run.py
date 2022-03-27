@@ -22,6 +22,10 @@ def main(args):
         with open(args.config, 'w') as configfile:
             config.write(configfile)
 
+    if not os.path.exists(config["workspace"]["env_file"]):
+        with open(config["workspace"]["env_file"], 'w') as f:
+            f.write("#! /bin/bash\n")
+
     resources = []
     if len(args.resources) == 1 and args.resources[0] == 'all':
         args.resources = SUPPORTED

@@ -20,3 +20,4 @@ compile_commands.json
 # Third party packages and libraries
 scripts/third_party/*
 scripts/nodefiles/*
+scripts/setup/.romerc

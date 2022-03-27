@@ -32,7 +32,7 @@ class WorkloadDriver {
   static std::unique_ptr<WorkloadDriver> Create(
       std::unique_ptr<ClientAdaptor<OpType>> client,
       std::unique_ptr<Stream<OpType>> stream, QpsController* qps_controller,
-      std::optional<std::chrono::milliseconds> qps_sampling_rate) {
+      std::optional<std::chrono::milliseconds> qps_sampling_rate = std::nullopt) {
     return std::unique_ptr<WorkloadDriver>(new WorkloadDriver(
         std::move(client), std::move(stream), qps_controller,
         qps_sampling_rate.value_or(std::chrono::milliseconds(0))));

@@ -37,6 +37,8 @@ class Counter : public Metric, Accumulator<Counter<T>> {
   // For printing.
   std::string ToString() override;
 
+  MetricProto ToProto() override;
+
   absl::Status Accumulate(const absl::StatusOr<Counter<T>>& other) override;
 
  private:
@@ -104,6 +106,14 @@ bool Counter<T>::operator==(const Counter<T>& c) const {
 template <typename T>
 std::string Counter<T>::ToString() {
   return "count: " + std::to_string(counter_) + "";
+}
+
+template <typename T>
+MetricProto Counter<T>::ToProto() {
+  MetricProto proto;
+  proto.set_name(name_);
+  proto.mutable_counter()->set_count(counter_);
+  return proto;
 }
 
 template <typename T>

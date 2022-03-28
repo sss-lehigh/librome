@@ -7,9 +7,11 @@
 #include <thread>
 
 #include "rome/colosseum/client_adaptor.h"
+#include "rome/colosseum/colosseum.pb.h"
 #include "rome/colosseum/qps_controller.h"
 #include "rome/colosseum/stream.h"
 #include "rome/metrics/counter.h"
+#include "rome/metrics/metric.h"
 #include "rome/metrics/stopwatch.h"
 #include "rome/metrics/summary.h"
 #include "rome/util/duration_util.h"
@@ -32,7 +34,8 @@ class WorkloadDriver {
   static std::unique_ptr<WorkloadDriver> Create(
       std::unique_ptr<ClientAdaptor<OpType>> client,
       std::unique_ptr<Stream<OpType>> stream, QpsController* qps_controller,
-      std::optional<std::chrono::milliseconds> qps_sampling_rate) {
+      std::optional<std::chrono::milliseconds> qps_sampling_rate =
+          std::nullopt) {
     return std::unique_ptr<WorkloadDriver>(new WorkloadDriver(
         std::move(client), std::move(stream), qps_controller,
         qps_sampling_rate.value_or(std::chrono::milliseconds(0))));
@@ -59,6 +62,14 @@ class WorkloadDriver {
     return ss.str();
   }
 
+  WorkloadDriverProto ToProto() {
+    WorkloadDriverProto proto;
+    proto.mutable_ops()->CopyFrom(ops_.ToProto());
+    proto.mutable_runtime()->CopyFrom(stopwatch_->ToProto());
+    proto.mutable_qps()->CopyFrom(qps_summary_.ToProto());
+    return proto;
+  }
+
  private:
   absl::Status Run();
 
@@ -72,8 +83,9 @@ class WorkloadDriver {
         qps_controller_(qps_controller),
         ops_("total_ops"),
         stopwatch_(nullptr),
+        prev_ops_(0),
         qps_sampling_rate_(qps_sampling_rate),
-        qps_summary_("actual_qps", "ops/ms", 1000) {}
+        qps_summary_("sampled_qps", "ops/ms", 1000) {}
 
   std::atomic<bool> terminated_;
 

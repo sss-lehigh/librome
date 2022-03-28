@@ -25,7 +25,7 @@ constexpr uint16_t kPort = 18018;
 
 class FakeRdmaReceiver : public RdmaReceiverInterface {
  public:
-  absl::StatusOr<rdma_conn_param*> OnConnectRequest(
+  void OnConnectRequest(
       rdma_cm_id* id, rdma_cm_event* event) override {
     ibv_qp_init_attr init_attr;
     std::memset(&init_attr, 0, sizeof(init_attr));
@@ -34,10 +34,9 @@ class FakeRdmaReceiver : public RdmaReceiverInterface {
     init_attr.cap.max_inline_data = 0;
     init_attr.qp_type = id->qp_type;
     RDMA_CM_ASSERT(rdma_create_qp, id, nullptr, &init_attr);
-    return nullptr;
   }
   void OnEstablished(rdma_cm_id* id, rdma_cm_event* event) override {}
-  void OnDisconnect(rdma_cm_id* id, rdma_cm_event* event) override {}
+  void OnDisconnect(rdma_cm_id* id) override {}
 };
 
 class FakeRdmaClient {

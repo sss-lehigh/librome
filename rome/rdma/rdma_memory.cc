@@ -54,7 +54,7 @@ RdmaMemory::RdmaMemory(uint64_t capacity, std::optional<std::string_view> path,
   }
 
   if (!use_hugepages) {
-    ROME_WARN("Not using hugepages; performance might suffer.");
+    ROME_TRACE("Not using hugepages; performance might suffer.");
     raw_ = std::make_unique<uint8_t[]>(capacity_);
     ROME_ASSERT(std::get<0>(raw_) != nullptr, "Allocation failed.");
   } else {

@@ -71,7 +71,7 @@ def rome_deps():
     maybe(
         http_archive,
         name = "fmt",
-        build_file = "@//:third-party/fmt.BUILD",
+        build_file = "@//:third_party/BUILD.fmt",
         sha256 = "d8e9f093b2241c3a9fc3895e23231ef9de00c762cfa0a9c65e4748755bc352ae",
         strip_prefix = "fmt-8.1.0",
         urls = ["https://github.com/fmtlib/fmt/releases/download/8.1.0/fmt-8.1.0.zip"],
@@ -80,7 +80,7 @@ def rome_deps():
     maybe(
         http_archive,
         name = "spdlog",
-        build_file = "@//:third-party/spdlog.BUILD",
+        build_file = "@//:third_party/BUILD.spdlog",
         sha256 = "130bd593c33e2e2abba095b551db6a05f5e4a5a19c03ab31256c38fa218aa0a6",
         strip_prefix = "spdlog-1.9.2",
         urls = ["https://github.com/gabime/spdlog/archive/refs/tags/v1.9.2.zip"],

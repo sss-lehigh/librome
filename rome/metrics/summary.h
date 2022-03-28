@@ -73,6 +73,8 @@ class Summary : public Metric, public Accumulator<Summary<T>> {
 
   std::string ToString() override;
 
+  MetricProto ToProto() override;
+
  private:
   // A visitor that counts the total number of values in the subtree rooted by a
   // given node. Instead of maintaining a value in conjunction with the
@@ -360,6 +362,26 @@ std::string Summary<T>::ToString() {
   ss << "p999: " << p999_ << ", ";
   ss << "max: " << max_ << "}";
   return ss.str();
+}
+
+template <typename T>
+MetricProto Summary<T>::ToProto() {
+  UpdatePercentilesAndClearSamples();
+  MetricProto proto;
+  proto.set_name(name_);
+  SummaryProto* summary = proto.mutable_summary();
+  *(summary->mutable_units()) = units_;
+  summary->set_count(total_samples_);
+  summary->set_mean(mean_);
+  summary->set_stddev(std::sqrt(variance_));
+  summary->set_min(min_);
+  summary->set_p50(p50_);
+  summary->set_p90(p90_);
+  summary->set_p95(p95_);
+  summary->set_p99(p99_);
+  summary->set_p999(p999_);
+  summary->set_max(max_);
+  return proto;
 }
 
 }  // namespace rome::metrics

@@ -57,6 +57,8 @@ class Stopwatch : public Metric {
 
   std::string ToString() override;
 
+  MetricProto ToProto() override;
+
  private:
   Stopwatch(std::string_view name, uint64_t tsc_freq_khz);
 

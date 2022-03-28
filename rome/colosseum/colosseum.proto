@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+import "rome/metrics/metrics.proto";
+
+package rome;
+
+message WorkloadDriverProto {
+  optional metrics.MetricProto ops = 2;
+  optional metrics.MetricProto runtime = 3;
+  optional metrics.MetricProto qps = 4;
+};

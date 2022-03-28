@@ -116,4 +116,11 @@ std::string Stopwatch::ToString() {
   return ss.str();
 }
 
+MetricProto Stopwatch::ToProto() {
+  MetricProto proto;
+  proto.set_name(name_);
+  proto.mutable_stopwatch()->set_runtime_ns(GetRuntimeNanoseconds().count());
+  return proto;
+}
+
 }  // namespace rome::metrics

@@ -1,28 +1,44 @@
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+
 package(default_visibility = ["//rome:__subpackages__"])
 
 cc_library(
-    visibility = ["//visibility:public"],
     name = "metric",
     hdrs = ["metric.h"],
+    visibility = ["//visibility:public"],
     deps = ["@absl//absl/status:statusor"],
 )
 
-cc_library(
+proto_library(
+    name = "metrics_proto",
+    srcs = ["metrics.proto"],
     visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "metrics_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":metrics_proto"],
+)
+
+cc_library(
     name = "counter",
     hdrs = ["counter.h"],
+    visibility = ["//visibility:public"],
     deps = [
         ":metric",
+        ":metrics_cc_proto",
         "@absl//absl/status:statusor",
     ],
 )
 
 cc_library(
-    visibility = ["//visibility:public"],
     name = "summary",
     hdrs = ["summary.h"],
+    visibility = ["//visibility:public"],
     deps = [
         ":metric",
+        ":metrics_cc_proto",
         "//rome/internal/atree",
         "@absl//absl/status:statusor",
     ],
@@ -34,6 +50,7 @@ cc_test(
     deps = [
         ":counter",
         ":metric",
+        ":metrics_cc_proto",
         ":summary",
         "//rome/testutil:status_matcher",
         "@absl//absl/status:statusor",
@@ -42,12 +59,13 @@ cc_test(
 )
 
 cc_library(
-    visibility = ["//visibility:public"],
     name = "stopwatch",
     srcs = ["stopwatch.cc"],
     hdrs = ["stopwatch.h"],
+    visibility = ["//visibility:public"],
     deps = [
         ":metric",
+        ":metrics_cc_proto",
         "//rome/logging",
     ],
 )
@@ -56,6 +74,7 @@ cc_test(
     name = "stopwatch_test",
     srcs = ["stopwatch_test.cc"],
     deps = [
+        ":metrics_cc_proto",
         ":stopwatch",
         "//rome/util:clocks",
         "@gtest//:gtest_main",

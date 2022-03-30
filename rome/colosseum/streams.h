@@ -88,6 +88,36 @@ class WeightedStream : public Stream<E> {
   std::vector<E> output_;
 };
 
+template <typename T>
+class MonotonicStream : public Stream<T> {
+ public:
+  MonotonicStream(const T &init, const T &step) : step_(step), value_(init) {}
+
+ private:
+  inline absl::StatusOr<T> NextInternal() override { return value_ += step_; }
+
+  const T step_;
+  T value_;
+};
+
+template <typename T>
+class CircularStream : public Stream<T> {
+ public:
+  CircularStream(const T &start, const T &end, const T &step)
+      : step_(step), start_(start), end_(end) {}
+
+ private:
+  inline absl::StatusOr<T> NextInternal() override {
+    curr_ += step_;
+    return (curr_ % end_) + start_;
+  }
+
+  const T step_;
+  const T start_;
+  const T end_;
+  T curr_;
+};
+
 template <typename T, typename... U>
 class MappedStream : public Stream<T> {
  public:

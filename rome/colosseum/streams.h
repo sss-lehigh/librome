@@ -67,7 +67,7 @@ class WeightedStream : public Stream<E> {
   static_assert(std::is_enum<E>::value);
 
  public:
-  WeightedStream(const std::vector<int> &weights)
+  WeightedStream(const std::vector<uint32_t> &weights)
       : distribution_(0,
                       std::accumulate(weights.begin(), weights.end(), 0) - 1) {
     for (uint32_t i = 0; i < weights.size(); ++i) {
@@ -104,12 +104,13 @@ template <typename T>
 class CircularStream : public Stream<T> {
  public:
   CircularStream(const T &start, const T &end, const T &step)
-      : step_(step), start_(start), end_(end) {}
+      : step_(step), start_(start), end_(end), curr_() {}
 
  private:
   inline absl::StatusOr<T> NextInternal() override {
+    auto temp = curr_;
     curr_ += step_;
-    return (curr_ % end_) + start_;
+    return (temp % end_) + start_;
   }
 
   const T step_;

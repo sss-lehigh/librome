@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
   // Make client and op stream.
   auto client = std::make_unique<SimpleClientAdaptor>();
   auto op_stream = std::make_unique<rome::WeightedStream<SimpleOp::Type>>(
-      std::vector<int>{1, 1});
+      std::vector<uint32_t>{1, 1});
   auto data_stream =
       std::make_unique<rome::UniformDoubleStream<double, double>>(0.0, 1000.0);
   auto mapped_stream =

@@ -50,8 +50,8 @@ TEST(StreamsTest, WeightedStreamTest) {
   constexpr int kNumTrials = 1000000;
 
   std::mt19937 mt;
-  std::uniform_int_distribution<int> dist(1, 10);
-  std::vector<int> weights = {dist(mt), dist(mt), dist(mt)};
+  std::uniform_int_distribution<uint32_t> dist(1, 10);
+  std::vector<uint32_t> weights = {dist(mt), dist(mt), dist(mt)};
   int total_weight = std::accumulate(weights.begin(), weights.end(), 0);
   auto stream = WeightedStream<TestEnum>(weights);
 

@@ -52,25 +52,12 @@ cc_test(
     ],
 )
 
-proto_library(
-    name = "colosseum_proto",
-    srcs = ["colosseum.proto"],
-    visibility = ["//visibility:public"],
-    deps = ["//rome/metrics:metrics_proto"],
-)
-
-cc_proto_library(
-    name = "colosseum_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = ["colosseum_proto"],
-)
-
 cc_library(
     name = "workload_driver",
     hdrs = ["workload_driver.h"],
     visibility = ["//visibility:public"],
     deps = [
-        ":colosseum_cc_proto",
+        "//protos:colosseum_cc_proto",
         "//rome/metrics:counter",
         "//rome/metrics:stopwatch",
         "//rome/metrics:summary",

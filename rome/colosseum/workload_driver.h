@@ -6,8 +6,8 @@
 #include <memory>
 #include <thread>
 
+#include "protos/colosseum.pb.h"
 #include "rome/colosseum/client_adaptor.h"
-#include "rome/colosseum/colosseum.pb.h"
 #include "rome/colosseum/qps_controller.h"
 #include "rome/colosseum/stream.h"
 #include "rome/metrics/counter.h"
@@ -85,7 +85,7 @@ class WorkloadDriver {
         stopwatch_(nullptr),
         prev_ops_(0),
         qps_sampling_rate_(qps_sampling_rate),
-        qps_summary_("sampled_qps", "ops/ms", 1000) {}
+        qps_summary_("sampled_qps", "ops/s", 1000) {}
 
   std::atomic<bool> terminated_;
 
@@ -180,11 +180,12 @@ absl::Status WorkloadDriver<OpType>::Run() {
     if (auto curr_lap = stopwatch_->GetLapSplit();
         std::chrono::duration_cast<std::chrono::milliseconds>(
             curr_lap.GetRuntimeNanoseconds()) > qps_sampling_rate_) {
-      auto sample = (ops_.GetCounter() - prev_ops_) /
-                    util::ToDoubleMilliseconds(
-                        stopwatch_->GetLap().GetRuntimeNanoseconds());
+      auto curr_ops = ops_.GetCounter();
+      auto sample =
+          (curr_ops - prev_ops_) /
+          (stopwatch_->GetLap().GetRuntimeNanoseconds().count() * 1e-9);
       qps_summary_ << sample;
-      prev_ops_ = ops_.GetCounter();
+      prev_ops_ = curr_ops;
     }
   }
   stopwatch_->Stop();

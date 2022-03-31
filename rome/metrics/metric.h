@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "absl/status/statusor.h"
-#include "rome/metrics/metrics.pb.h"
+#include "protos/metrics.pb.h"
 
 namespace rome::metrics {
 

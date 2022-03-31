@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-import "rome/metrics/metrics.proto";
+import "protos/metrics.proto";
 
 package rome;
 

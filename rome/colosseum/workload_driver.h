@@ -57,6 +57,7 @@ class WorkloadDriver {
   std::string ToString() {
     std::stringstream ss;
     ss << ops_ << std::endl;
+    ss << lat_summary_ << std::endl;
     ss << qps_summary_ << std::endl;
     ss << *stopwatch_;
     return ss.str();
@@ -67,6 +68,7 @@ class WorkloadDriver {
     proto.mutable_ops()->CopyFrom(ops_.ToProto());
     proto.mutable_runtime()->CopyFrom(stopwatch_->ToProto());
     proto.mutable_qps()->CopyFrom(qps_summary_.ToProto());
+    proto.mutable_latency()->CopyFrom(lat_summary_.ToProto());
     return proto;
   }
 
@@ -85,7 +87,9 @@ class WorkloadDriver {
         stopwatch_(nullptr),
         prev_ops_(0),
         qps_sampling_rate_(qps_sampling_rate),
-        qps_summary_("sampled_qps", "ops/s", 1000) {}
+        qps_summary_("sampled_qps", "ops/s", 1000),
+        lat_sampling_rate_(10),
+        lat_summary_("sampled_lat", "ns", 1000) {}
 
   std::atomic<bool> terminated_;
 
@@ -101,6 +105,9 @@ class WorkloadDriver {
   uint64_t prev_ops_;
   std::chrono::milliseconds qps_sampling_rate_;
   metrics::Summary<double> qps_summary_;
+
+  std::chrono::milliseconds lat_sampling_rate_;
+  metrics::Summary<double> lat_summary_;
 
   std::future<absl::Status> run_status_;
   std::unique_ptr<std::thread> run_thread_;
@@ -170,6 +177,10 @@ absl::Status WorkloadDriver<OpType>::Run() {
       break;
     }
 
+    auto curr_lap = stopwatch_->GetLapSplit();
+    auto curr_lap_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        curr_lap.GetRuntimeNanoseconds());
+
     auto client_status = client_->Apply(next_op.value());
     if (!client_status.ok()) {
       status = client_status;
@@ -177,9 +188,14 @@ absl::Status WorkloadDriver<OpType>::Run() {
     }
 
     ++ops_;
-    if (auto curr_lap = stopwatch_->GetLapSplit();
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            curr_lap.GetRuntimeNanoseconds()) > qps_sampling_rate_) {
+
+    if (curr_lap_ms > lat_sampling_rate_) {
+      lat_summary_
+          << (stopwatch_->GetLapSplit().GetRuntimeNanoseconds().count() -
+              curr_lap.GetRuntimeNanoseconds().count());
+    }
+
+    if (curr_lap_ms > qps_sampling_rate_) {
       auto curr_ops = ops_.GetCounter();
       auto sample =
           (curr_ops - prev_ops_) /

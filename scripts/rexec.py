@@ -104,10 +104,21 @@ def get_nodes(nodefile):
   return nodes
 
 
+__utah__ = [
+  "xl170",
+  "d6515",
+  "c6525-100g",
+  "m510",
+]
+
+__emulab__ = [
+  "r320",
+]
+
 def build_hostname(nodetype, id):
-  if nodetype == "xl170" or nodetype == "d6515" or nodetype == "m510":
+  if nodetype in __utah__:
     return id + ".utah.cloudlab.us"
-  elif nodetype == "r320":
+  elif nodetype in __emulab__:
     return id + ".apt.emulab.net"
   else:
     print("Undefined host type in nodefile.")
@@ -193,8 +204,8 @@ def main(argv):
     for h in hosts:
       dest = common["remote_user"] + "@" + hosts[h] + ":" + config["sync"][
           "dest"]
-      cmd = "rsync -e '" + common["ssh"] + "' --exclude-from=" + config["sync"][
-          "exclude_file"] + " --progress -uva " + src + " " + dest
+      cmd = "rsync -r -e '" + common["ssh"] + "' --exclude-from=" + config["sync"][
+          "exclude_file"] + " --files-from=" + config["sync"]["include_file"] + " --progress -uva " + src + " " + dest
 
       t = threading.Thread(
           target=lexec, args=[cmd,

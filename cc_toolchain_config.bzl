@@ -45,6 +45,11 @@ common_dbg_flags = [
     "-g",
 ]
 
+common_opt_flags = [
+    "-O3",
+    "-DNDEBUG",
+]
+
 common_linker_flags = [
     "-lstdc++",
     "-lm",
@@ -99,9 +104,11 @@ def _clang_impl(ctx):
 
     dbg_feature = feature(name = "dbg")
     fastbuild_feature = feature(name = "fastbuild")
+    opt_feature = feature(name = "opt")
     features = [
         dbg_feature,
         fastbuild_feature,
+        opt_feature,
         feature(
             name = "default_linker_flags",
             enabled = True,
@@ -132,6 +139,25 @@ def _clang_impl(ctx):
                     flag_groups = ([
                         flag_group(
                             flags = common_dbg_flags,
+                        ),
+                    ]),
+                ),
+            ],
+        ),
+        feature(
+            name = "default_opt_flags",
+            enabled = True,
+            flag_sets = [
+                flag_set(
+                    with_features = [
+                        with_feature_set(
+                            features = ["opt"],
+                        ),
+                    ],
+                    actions = all_cpp_actions,
+                    flag_groups = ([
+                        flag_group(
+                            flags = common_opt_flags,
                         ),
                     ]),
                 ),

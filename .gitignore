@@ -21,3 +21,4 @@ compile_commands.json
 scripts/third_party/*
 scripts/nodefiles/*
 scripts/setup/.romerc
+third-party

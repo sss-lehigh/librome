@@ -41,6 +41,7 @@ common_compile_flags = [
 
 common_dbg_flags = [
     "-fno-omit-frame-pointer",
+    "-fno-inline",
     "-O0",
     "-g",
 ]

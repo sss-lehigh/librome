@@ -83,3 +83,9 @@ cc_library(
     hdrs = ["distribution_util.h"],
     deps = [],
 )
+
+cc_library(
+    name = "memory_resource",
+    hdrs = ["memory_resource.h"],
+    deps = [],
+)

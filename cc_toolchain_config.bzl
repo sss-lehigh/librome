@@ -43,7 +43,7 @@ common_dbg_flags = [
     "-fno-omit-frame-pointer",
     "-fno-inline",
     "-O0",
-    "-g",
+    "-ggdb3",
 ]
 
 common_opt_flags = [

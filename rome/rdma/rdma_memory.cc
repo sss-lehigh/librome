@@ -91,16 +91,16 @@ absl::Status RdmaMemory::RegisterMemoryRegion(std::string_view id,
     return AlreadyExistsErrorBuilder() << "Memory region exists: {}" << id;
   }
 
-  auto mr = ibv_mr_unique_ptr(
-      ibv_reg_mr(pd,
-                 reinterpret_cast<uint8_t *>(std::visit(
-                     [](const auto &raw) { return raw.get(); }, raw_)) +
-                     offset,
-                 length, kDefaultAccess));
+  auto *base = reinterpret_cast<uint8_t *>(std::visit(
+                   [](const auto &raw) { return raw.get(); }, raw_)) +
+               offset;
+  auto mr = ibv_mr_unique_ptr(ibv_reg_mr(pd, base, length, kDefaultAccess));
   ROME_CHECK_QUIET(
       ROME_RETURN(absl::InternalError("Failed to register memory region")),
       mr != nullptr);
   memory_regions_.emplace(id, std::move(mr));
+  ROME_DEBUG("Memory region registered: {} @ {} to {} (length={})", id,
+             fmt::ptr(base), fmt::ptr(base + length), length);
   return absl::OkStatus();
 }
 

@@ -95,7 +95,7 @@ inline void __rome_init_log__() {
   exit(1);
 #endif
 
-#define ROME_RETURN(x) [=]() { return x; }
+#define ROME_RETURN(x) [&]() { return x; }
 #define ROME_RETURN_FALSE []() { return false; }
 #define ROME_RETURN_TRUE []() { return true; }
 #define ROME_NOOP []() {}

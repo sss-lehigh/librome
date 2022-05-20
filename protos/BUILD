@@ -34,3 +34,13 @@ py_proto_library(
     name = "metrics_py_proto",
     srcs = ["metrics.proto"],
 )
+
+proto_library(
+    name = "testutil_proto",
+    srcs = ["testutil.proto"],
+)
+
+cc_proto_library(
+    name = "testutil_cc_proto",
+    deps = [":testutil_proto"],
+)

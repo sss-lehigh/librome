@@ -18,7 +18,7 @@ class Metric {
   };
 
  protected:
-  std::string name_;
+  const std::string name_;
 };
 
 template <typename T>

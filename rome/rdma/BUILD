@@ -9,6 +9,15 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "rdma_util_test",
+    srcs = ["rdma_util_test.cc"],
+    deps = [
+        ":rdma_util",
+        "@gtest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "rdma_device",
     srcs = ["rdma_device.cc"],

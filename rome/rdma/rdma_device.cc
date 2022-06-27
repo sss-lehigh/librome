@@ -67,6 +67,15 @@ RdmaDevice::GetAvailableDevices() {
   return active;
 }
 
+/* static */ absl::Status RdmaDevice::LookupDevice(std::string_view name) {
+  auto devices_or = GetAvailableDevices();
+  if (!devices_or.ok()) return devices_or.status();
+  for (const auto &d : devices_or.value()) {
+    if (name == d.first) return absl::OkStatus();
+  }
+  return util::NotFoundErrorBuilder() << "Device not found: " << name;
+}
+
 RdmaDevice::~RdmaDevice() { protection_domains_.clear(); }
 
 absl::Status RdmaDevice::OpenDevice(std::string_view dev_name) {

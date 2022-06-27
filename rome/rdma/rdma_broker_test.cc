@@ -5,6 +5,7 @@
 
 #include <barrier>
 #include <chrono>
+#include <memory>
 #include <random>
 #include <string>
 #include <thread>
@@ -13,6 +14,7 @@
 #include "gtest/gtest.h"
 #include "rdma_receiver.h"
 #include "rdma_util.h"
+#include "rome/rdma/rdma_device.h"
 #include "rome/testutil/status_matcher.h"
 #include "rome/util/status_util.h"
 
@@ -21,12 +23,11 @@ namespace {
 
 using ::util::InternalErrorBuilder;
 
-constexpr uint16_t kPort = 18018;
+constexpr char kIpAddress[] = "10.0.0.1";
 
 class FakeRdmaReceiver : public RdmaReceiverInterface {
  public:
-  void OnConnectRequest(
-      rdma_cm_id* id, rdma_cm_event* event) override {
+  void OnConnectRequest(rdma_cm_id* id, rdma_cm_event* event) override {
     ibv_qp_init_attr init_attr;
     std::memset(&init_attr, 0, sizeof(init_attr));
     init_attr.cap.max_send_wr = init_attr.cap.max_recv_wr = 1;
@@ -34,14 +35,20 @@ class FakeRdmaReceiver : public RdmaReceiverInterface {
     init_attr.cap.max_inline_data = 0;
     init_attr.qp_type = id->qp_type;
     RDMA_CM_ASSERT(rdma_create_qp, id, nullptr, &init_attr);
+    RDMA_CM_ASSERT(rdma_ack_cm_event, event);
+
+    rdma_conn_param conn_param;
+    std::memset(&conn_param, 0, sizeof(conn_param));
+    RDMA_CM_ASSERT(rdma_accept, id, &conn_param);
   }
+
   void OnEstablished(rdma_cm_id* id, rdma_cm_event* event) override {}
   void OnDisconnect(rdma_cm_id* id) override {}
 };
 
 class FakeRdmaClient {
  public:
-  absl::Status Connect(std::string_view server, uint16_t port) {
+  absl::Status Connect(std::optional<std::string_view> server, uint16_t port) {
     rdma_cm_id* id = nullptr;
     rdma_addrinfo hints, *resolved;
     ibv_qp_init_attr init_attr;
@@ -52,8 +59,11 @@ class FakeRdmaClient {
 
     char hostname[PATH_MAX];
     gethostname(hostname, PATH_MAX);
-    int gai_ret = rdma_getaddrinfo(hostname, std::to_string(htons(port)).data(),
-                                   &hints, &resolved);
+    ROME_DEBUG("Connecting to: {}:{}",
+               server.has_value() ? server.value() : hostname, port);
+    int gai_ret =
+        rdma_getaddrinfo(server.has_value() ? server.value().data() : hostname,
+                         std::to_string(htons(port)).data(), &hints, &resolved);
     ROME_CHECK_QUIET(
         ROME_RETURN(InternalErrorBuilder()
                     << "rdma_getaddrinfo(): " << gai_strerror(gai_ret)),
@@ -77,103 +87,44 @@ class FakeRdmaClient {
   }
 };
 
-TEST(RdmaBrokerTest, InitSpecifiesPort) {
-  // Test plan: Create a new `RdmaBroker` that is initialized on a given port to
-  // check that it is created successfully.
-  ROME_INIT_LOG();
-  FakeRdmaReceiver receiver;
-  auto broker = RdmaBroker::Create("", kPort, &receiver);
-  EXPECT_NE(broker, nullptr);
-}
+class RdmaBrokerTest : public ::testing::Test {
+ protected:
+  void SetUp() {
+    ROME_INIT_LOG();
+    auto devices = RdmaDevice::GetAvailableDevices();
+    ROME_ASSERT(devices.ok() && !devices->empty(), devices.status().message());
 
-TEST(RdmaBrokerTest, InitDoesNotSpecifyPort) {
-  // Test plan: Create a new `RdmaBroker` that is initialized on a given port to
-  // check that it is created successfully.
-  ROME_INIT_LOG();
-  FakeRdmaReceiver receiver;
-  auto broker = RdmaBroker::Create("", std::nullopt, &receiver);
-  EXPECT_NE(broker, nullptr);
-}
-
-TEST(RdmaBrokerTest, ClientConnectsToKnownPort) {
-  // Test plan: Create a new `RdmaBroker` that is initialized on a given port to
-  // check that its construction succeeds.
-  ROME_INIT_LOG();
-
-  std::barrier init(2);
-  std::barrier done(2);
-
-  std::thread thread([&]() {
-    FakeRdmaReceiver receiver;
-    auto broker = RdmaBroker::Create("", kPort, &receiver);
-    init.arrive_and_wait();
-    done.arrive_and_wait();
-    EXPECT_OK(broker->Stop());
-  });
-
-  init.arrive_and_wait();
-
-  // Do work
-  FakeRdmaClient client;
-  EXPECT_OK(client.Connect("", kPort));
-
-  done.arrive_and_wait();
-  thread.join();
-}
-
-TEST(RdmaBrokerTest, ClientConnectsToUnknownPort) {
-  // Test plan: Create a new `RdmaBroker` that is initialized on a given port to
-  // check that its construction succeeds.
-  ROME_INIT_LOG();
-
-  std::barrier init(2);
-  std::barrier done(2);
-
-  FakeRdmaReceiver receiver;
-  auto broker = RdmaBroker::Create("", std::nullopt, &receiver);
-  std::thread thread([&]() {
-    init.arrive_and_wait();
-    done.arrive_and_wait();
-    EXPECT_OK(broker->Stop());
-  });
-
-  init.arrive_and_wait();
-
-  // Do work
-  FakeRdmaClient client;
-  EXPECT_OK(client.Connect("", broker->port()));
-
-  done.arrive_and_wait();
-  thread.join();
-}
-
-TEST(RdmaBrokerTest, MultipleClientsConnect) {
-  // Test plan: Create a new `RdmaBroker` that is initialized on a given port to
-  // check that its construction succeeds.
-  ROME_INIT_LOG();
-
-  std::barrier init(2);
-  std::barrier done(2);
-
-  std::thread thread([&]() {
-    FakeRdmaReceiver receiver;
-    auto broker = RdmaBroker::Create("", kPort, &receiver);
-    init.arrive_and_wait();
-    done.arrive_and_wait();
-    EXPECT_OK(broker->Stop());
-  });
-
-  init.arrive_and_wait();
-
-  // Connect clients.
-  static constexpr int kIters = 1000;
-  for (int i = 0; i < kIters; ++i) {
-    FakeRdmaClient client;
-    EXPECT_OK(client.Connect("", kPort));
+    // Listen on all devices
+    broker_ = RdmaBroker::Create(std::nullopt, std::nullopt, &receiver_);
   }
 
-  done.arrive_and_wait();
-  thread.join();
+  void TearDown() { ASSERT_OK(broker_->Stop()); }
+
+  absl::Status Connect(FakeRdmaClient* client) {
+    return client->Connect(kIpAddress, broker_->port());
+  }
+
+  FakeRdmaReceiver receiver_;
+  std::unique_ptr<RdmaBroker> broker_;
+};
+
+TEST_F(RdmaBrokerTest, ClientConnects) {
+  // Test plan: Create a new `RdmaBroker` that is initialized on a given port to
+  // check that its construction succeeds.
+  FakeRdmaClient client;
+  EXPECT_OK(Connect(&client));
+}
+
+TEST_F(RdmaBrokerTest, MultipleClientsConnect) {
+  // Test plan: Create a new `RdmaBroker` that is initialized on a given port to
+  // check that its construction succeeds.
+  // Connect clients.
+  static constexpr int kIters = 100;
+  std::vector<FakeRdmaClient> clients;
+  for (int i = 0; i < kIters; ++i) {
+    clients.emplace_back();
+    EXPECT_OK(Connect(&clients.back()));
+  }
 }
 
 // TODO: Validate failure cases

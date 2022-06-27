@@ -129,10 +129,10 @@ absl::Status WorkloadDriver<OpType>::Start() {
     return absl::UnavailableError(
         "Cannot restart a terminated workload driver.");
   }
-  stopwatch_ = metrics::Stopwatch::Create("driver_stopwatch");
   auto client_status = client_->Start();
   if (!client_status.ok()) return client_status;
 
+  stopwatch_ = metrics::Stopwatch::Create("driver_stopwatch");
   auto task =
       std::packaged_task<absl::Status()>(std::bind(&WorkloadDriver::Run, this));
   run_status_ = task.get_future();

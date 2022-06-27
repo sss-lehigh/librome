@@ -90,9 +90,9 @@ inline void __rome_init_log__() {
 #endif
 
 #if ROME_LOG_LEVEL != OFF
-#define ROME_FATAL(...)          \
-  SPDLOG_CRITICAL(__VA_ARGS__);  \
-  exit(1);
+#define ROME_FATAL(...)         \
+  SPDLOG_CRITICAL(__VA_ARGS__); \
+  abort();
 #endif
 
 #define ROME_RETURN(x) [&]() { return x; }
@@ -121,10 +121,10 @@ inline void __rome_init_log__() {
     SPDLOG_CRITICAL(__VA_ARGS__); \
     abort();                      \
   }
-#define ROME_ASSERT_OK(status)                                 \
-  if (!(status.ok())) [[unlikely]] {                           \
-    SPDLOG_CRITICAL(::testutil::GetStatus(status).ToString()); \
-    abort();                                                   \
+#define ROME_ASSERT_OK(status)                              \
+  if (auto __s = status; !(__s.ok())) [[unlikely]] {        \
+    SPDLOG_CRITICAL(::testutil::GetStatus(__s).ToString()); \
+    abort();                                                \
   }
 
 // Specific checks for debugging. Can be turned off by commenting out

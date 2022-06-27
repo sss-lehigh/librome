@@ -49,9 +49,9 @@ class RdmaBroker {
   // `receiver`. If the initialization fails, then the status is propagated to
   // the caller. Otherwise, a unique pointer to the newly created `RdmaBroker`
   // is returned.
-  static std::unique_ptr<RdmaBroker> Create(std::string_view device,
-                                            std::optional<uint16_t> port,
-                                            RdmaReceiverInterface* receiver);
+  static std::unique_ptr<RdmaBroker> Create(
+      std::optional<std::string_view> device, std::optional<uint16_t> port,
+      RdmaReceiverInterface* receiver);
 
   RdmaBroker(const RdmaBroker&) = delete;
   RdmaBroker(RdmaBroker&&) = delete;
@@ -70,12 +70,14 @@ class RdmaBroker {
 
   // Start the broker listening on the given `device` and `port`. If `port` is
   // `nullopt`, then the first available port is used.
-  absl::Status Init(std::string_view addr, std::optional<uint16_t> port);
+  absl::Status Init(std::optional<std::string_view> addr,
+                    std::optional<uint16_t> port);
 
   Coro HandleConnectionRequests();
 
   void Run();
 
+  std::string name_;
   std::string address_;
   uint16_t port_;
 

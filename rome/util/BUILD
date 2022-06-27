@@ -89,3 +89,19 @@ cc_library(
     hdrs = ["memory_resource.h"],
     deps = [],
 )
+
+cc_library(
+    name = "variant_util",
+    hdrs = ["variant_util.h"],
+    deps = [],
+)
+
+cc_test(
+    name = "variant_util_test",
+    srcs = ["variant_util_test.cc"],
+    deps = [
+        ":variant_util",
+        "//rome/logging",
+        "@gtest//:gtest_main",
+    ],
+)

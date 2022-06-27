@@ -25,7 +25,8 @@ TwoSidedRdmaMessenger<kCapacity, kRecvMaxBytes>::TwoSidedRdmaMessenger(
       recv_capacity_(kCapacity / 2),
       recv_total_(0) {
   ROME_ASSERT_OK(rm_.RegisterMemoryRegion(kSendId, 0, send_capacity_));
-  ROME_ASSERT_OK(rm_.RegisterMemoryRegion(kRecvId, 0, recv_capacity_));
+  ROME_ASSERT_OK(
+      rm_.RegisterMemoryRegion(kRecvId, send_capacity_, recv_capacity_));
   send_mr_ = VALUE_OR_DIE(rm_.GetMemoryRegion(kSendId));
   recv_mr_ = VALUE_OR_DIE(rm_.GetMemoryRegion(kRecvId));
   send_base_ = reinterpret_cast<uint8_t*>(send_mr_->addr);

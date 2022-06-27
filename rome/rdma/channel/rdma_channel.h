@@ -49,6 +49,10 @@ class RdmaChannel : public Messenger, Accessor {
     }
   }
 
+  absl::Status Post(ibv_send_wr* wr, ibv_send_wr** bad) {
+    return this->PostInternal(wr, bad);
+  }
+
  private:
   // A pointer to the QP used to post sends and receives.
   rdma_cm_id* id_;  //! NOT OWNED

@@ -56,3 +56,14 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
+
+cc_library(
+    name = "sync_accessor",
+    srcs = ["sync_accessor.cc"],
+    hdrs = ["sync_accessor.h"],
+    deps = [
+        ":rdma_accessor",
+        "//rome/rdma:rdma_util",
+        "@absl//absl/status",
+    ],
+)

@@ -21,6 +21,8 @@ class RdmaDevice {
   static absl::StatusOr<std::vector<std::pair<std::string, int>>>
   GetAvailableDevices();
 
+  static absl::Status LookupDevice(std::string_view name);
+
   static std::unique_ptr<RdmaDevice> Create(std::string_view name,
                                             std::optional<int> port) {
     auto *device = new RdmaDevice();

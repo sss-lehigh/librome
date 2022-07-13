@@ -1,8 +1,19 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 
+levels = [
+    "off",
+    "critical",
+    "error",
+    "warn",
+    "info",
+    "debug",
+    "trace",
+]
+
 string_flag(
     name = "log_level",
-    build_setting_default = "",
+    build_setting_default = "info",
+    values = levels,
 )
 
 config_setting(
@@ -93,8 +104,8 @@ cc_library(
         ":dbg": ["ROME_LOG_LEVEL=DEBUG"],
         ":info": ["ROME_LOG_LEVEL=INFO"],
         ":fastbuild": ["ROME_LOG_LEVEL=INFO"],
+        ":opt": ["ROME_LOG_LEVEL=INFO"],
         ":warn": ["ROME_LOG_LEVEL=WARN"],
-        ":opt": ["ROME_LOG_LEVEL=WARN"],
         ":error": ["ROME_LOG_LEVEL=ERROR"],
         ":critical": ["ROME_LOG_LEVEL=CRITICAL"],
         ":off": ["ROME_LOG_LEVEL=OFF"],

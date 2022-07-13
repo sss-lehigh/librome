@@ -22,3 +22,6 @@ scripts/third_party/*
 scripts/nodefiles/*
 scripts/setup/.romerc
 third-party
+
+# GDB history
+.gdb_history

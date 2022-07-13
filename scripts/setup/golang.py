@@ -11,11 +11,12 @@ class Golang(HostedArchive):
         super().__init__(config, "golang")
 
     def setup(self):
-        result = subprocess.run(["go version"], shell=True, capture_output=False).returncode
-        if  result != 0:
+        try:
+            subprocess.run(["go", "version"], check=True)
+        except FileNotFoundError:
             super().setup()
-        else:
-            pass
+        except Exception as e:
+            raise(e)
         try_add_path(os.path.join(self.dest_path, "go", "bin"))
 
 
@@ -30,6 +31,5 @@ class GoPackages(__Resource__):
 
     def setup(self):
         for p in self.packages:
-            subprocess.run(["go", "install", p])
+            subprocess.run(["go", "install", p], check=True)
         try_add_path("\$(go env GOROOT)/bin")
-        

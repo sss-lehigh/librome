@@ -3,6 +3,7 @@ import configparser
 import os
 import shutil
 import hashlib
+# from sh import wget, cat, grep, sudo, echo, export
 
 config = configparser.ConfigParser(
     interpolation=configparser.ExtendedInterpolation())
@@ -27,9 +28,12 @@ def download(url, dest):
 
     `dest` local download destination
     """
-    if subprocess.run(["wget", "-c", "--read-timeout=5",
-                       "--tries=0", url, "-P", dest]).returncode != 0:
+    result = subprocess.run(
+        ['wget', '-c', '--read-timeout=5', '--tries=0', url, '-P', dest])
+    if result.returncode != 0:
         raise DownloadError(f"Failed to download: {url}")
+    # if subprocess.run(["wget", "-c", "--read-timeout=5",
+    #                    "--tries=0", url, "-P", dest]).returncode != 0:
 
 
 def validate_checksum(file, mode, expected):
@@ -40,6 +44,8 @@ def validate_checksum(file, mode, expected):
     elif mode == "sha512":
         with open(file, "rb") as f:
             actual = hashlib.sha512(f.read()).hexdigest()
+    elif mode == "skip":
+        return
     else:
         raise
 
@@ -63,26 +69,31 @@ def check_dir():
             'Calling script from unexpected directory: expected={0}, got={1}'.format(expected, cwd))
 
 
-def checked_call(cmd):
-    subprocess.run(cmd, shell=True, check=True)
-
-
 def __check_env(line):
-    return subprocess.run(
-        "cat " + config['workspace']['env_file'] + " | grep -q '" + line + "'", shell=True).returncode == 0
+    cat = subprocess.Popen(
+        ['cat', config['workspace']['env_file']],
+        stdout=subprocess.PIPE)
+    grep = subprocess.Popen(['grep', '-q', line], stdin=cat.stdout)
+    return grep.returncode == 0
 
 
 def __add_env(line):
-    checked_call("echo '" + line + "'  | sudo tee -a " + config['workspace']['env_file'])
-
+    echo = subprocess.Popen(['echo', line], stdout=subprocess.PIPE)
+    tee = subprocess.run(
+        ['sudo', 'tee', '-a', config['workspace']['env_file']],
+        stdin=echo.stdout, stdout=subprocess.DEVNULL)
+    if tee.returncode != 0:
+        raise RuntimeError('Failed to add line to environment: ' + line)
 
 # When adding a new path, we first check if the path exists then add it to both the `.bashrc` file and to the `PATH` environment variable.
+
+
 def try_add_path(path):
     if not __check_env(path):
         __add_env('export PATH=$PATH:' + path)
-        checked_call('export PATH=$PATH:' + path)
+        os.environ['PATH'] += os.pathsep + path
 
 
 def try_add_bashrc(line):
     if not __check_env(line):
-        checked_call("echo '" + line + "' | sudo tee -a " + config['workspace']['env_file'])
+        __add_env(line)

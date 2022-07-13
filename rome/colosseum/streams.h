@@ -37,13 +37,15 @@ template <typename DistributionType, typename... Args>
 class RandomDistributionStream
     : public Stream<typename DistributionType::result_type> {
  public:
-  RandomDistributionStream(const Args &...args) : distribution_(args...) {}
+  RandomDistributionStream(const Args &...args)
+      : mt_(rd_()), distribution_(std::forward<decltype(args)>(args)...) {}
 
  private:
   absl::StatusOr<typename DistributionType::result_type> NextInternal()
       override {
     return distribution_(mt_);
   }
+  std::random_device rd_;
   std::mt19937 mt_;
   DistributionType distribution_;
 };
@@ -144,6 +146,13 @@ class MappedStream : public Stream<T> {
   std::function<absl::StatusOr<T>(const std::unique_ptr<Stream<U>> &...)>
       generator_;
   std::tuple<std::unique_ptr<Stream<U>>...> streams_;
+};
+
+struct NoOp {};
+class NoOpStream : public Stream<NoOp> {
+ public:
+ private:
+  absl::StatusOr<NoOp> NextInternal() { return NoOp{}; }
 };
 
 }  // namespace rome

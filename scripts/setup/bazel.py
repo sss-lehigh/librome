@@ -14,6 +14,6 @@ class Bazel(__Resource__):
 
     def setup(self):
         for p in self.packages:
-            subprocess.run(["bash -c 'source .romerc && go install " + p + "'"], shell=True)
+            subprocess.run(['go', 'install', p])
         try_add_path("$(go env GOPATH)/bin")
         try_add_bashrc("alias bazel='bazelisk'")

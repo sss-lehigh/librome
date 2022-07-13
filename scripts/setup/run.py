@@ -2,14 +2,14 @@ from unittest import skip
 import mlnx_ofed
 import zookeeper
 import apt
-import go
+import golang
 import bazel
 import conda
 import pprof
 import argparse
 from util import *
 
-SUPPORTED = ['apt', 'golang', 'bazel', 'conda', 'zookeeper', 'pprof', 'mlnx_ofed']
+SUPPORTED = ['apt', 'golang', 'bazel', 'conda'] # 'zookeeper', 'pprof', 'mlnx_ofed']
 
 
 def main(args):
@@ -33,7 +33,7 @@ def main(args):
         if r == 'apt':
             resources.append(apt.APTPackages(config))
         elif r == 'golang':
-            resources.append(go.Golang(config))
+            resources.append(golang.Golang(config))
         elif r == 'bazel':
             resources.append(bazel.Bazel(config))
         elif r == 'conda':

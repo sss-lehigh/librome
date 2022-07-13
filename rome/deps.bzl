@@ -26,9 +26,9 @@ def rome_deps():
     maybe(
         git_repository,
         name = "absl",
-        commit = "215105818dfde3174fe799600bb0f3cae233d0bf",
+        branch = "lts_2022_06_23",
+        # commit = "273292d1cfc0a94a65082ee350509af1d113344d",
         remote = "https://github.com/abseil/abseil-cpp",
-        shallow_since = "1635953174 -0400",
     )
 
     maybe(

@@ -50,7 +50,7 @@ class RdmaBroker {
   // the caller. Otherwise, a unique pointer to the newly created `RdmaBroker`
   // is returned.
   static std::unique_ptr<RdmaBroker> Create(
-      std::optional<std::string_view> device, std::optional<uint16_t> port,
+      std::optional<std::string_view> address, std::optional<uint16_t> port,
       RdmaReceiverInterface* receiver);
 
   RdmaBroker(const RdmaBroker&) = delete;
@@ -77,7 +77,6 @@ class RdmaBroker {
 
   void Run();
 
-  std::string name_;
   std::string address_;
   uint16_t port_;
 

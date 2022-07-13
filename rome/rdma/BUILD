@@ -14,6 +14,7 @@ cc_test(
     srcs = ["rdma_util_test.cc"],
     deps = [
         ":rdma_util",
+        "//rome/logging",
         "@gtest//:gtest_main",
     ],
 )

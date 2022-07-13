@@ -3,6 +3,7 @@
 #include <infiniband/verbs.h>
 #include <sys/mman.h>
 
+#include <cstdlib>
 #include <fstream>
 #include <memory>
 
@@ -55,7 +56,9 @@ RdmaMemory::RdmaMemory(uint64_t capacity, std::optional<std::string_view> path,
 
   if (!use_hugepages) {
     ROME_TRACE("Not using hugepages; performance might suffer.");
-    raw_ = std::make_unique<uint8_t[]>(capacity_);
+    auto bytes = ((capacity >> 6) + 1) << 6;
+    raw_ = std::unique_ptr<uint8_t[]>(
+        reinterpret_cast<uint8_t *>(std::aligned_alloc(64, bytes)));
     ROME_ASSERT(std::get<0>(raw_) != nullptr, "Allocation failed.");
   } else {
     raw_ = std::unique_ptr<uint8_t[], mmap_deleter>(reinterpret_cast<uint8_t *>(

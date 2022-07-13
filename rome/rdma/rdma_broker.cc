@@ -53,10 +53,10 @@ RdmaBroker ::~RdmaBroker() {
 }
 
 std::unique_ptr<RdmaBroker> RdmaBroker::Create(
-    std::optional<std::string_view> device, std::optional<uint16_t> port,
+    std::optional<std::string_view> address, std::optional<uint16_t> port,
     RdmaReceiverInterface* receiver) {
   auto* broker = new RdmaBroker(receiver);
-  auto status = broker->Init(device, port);
+  auto status = broker->Init(address, port);
   if (status.ok()) {
     return std::unique_ptr<RdmaBroker>(broker);
   } else {
@@ -73,7 +73,7 @@ RdmaBroker::RdmaBroker(RdmaReceiverInterface* receiver)
       num_connections_(0),
       receiver_(receiver) {}
 
-absl::Status RdmaBroker::Init(std::optional<std::string_view> addr,
+absl::Status RdmaBroker::Init(std::optional<std::string_view> address,
                               std::optional<uint16_t> port) {
   // Check that devices exist before trying to set things up.
   auto devices = RdmaDevice::GetAvailableDevices();
@@ -88,7 +88,7 @@ absl::Status RdmaBroker::Init(std::optional<std::string_view> addr,
 
   auto port_str = port.has_value() ? std::to_string(htons(port.value())) : "";
   int gai_ret =
-      rdma_getaddrinfo(addr.has_value() ? addr.value().data() : nullptr,
+      rdma_getaddrinfo(address.has_value() ? address.value().data() : nullptr,
                        port_str.data(), &hints, &resolved);
   ROME_CHECK_QUIET(ROME_RETURN(InternalErrorBuilder() << "rdma_getaddrinfo(): "
                                                       << gai_strerror(gai_ret)),

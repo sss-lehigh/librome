@@ -18,3 +18,5 @@ build:xray --copt=-fxray-instrument
 build:xray --linkopt=-fxray-instrument
 
 build --config=clang
+
+build --flag_alias=log_level=//rome/logging:log_level

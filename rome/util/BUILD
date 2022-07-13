@@ -105,3 +105,14 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
+
+cc_library(
+    name = "proto_util",
+    hdrs = ["proto_util.h"],
+    deps = [],
+)
+
+py_library(
+    name = "debugpy_util",
+    srcs = ["debugpy_util.py"],
+)

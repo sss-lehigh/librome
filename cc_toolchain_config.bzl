@@ -327,7 +327,7 @@ def _gcc_impl(ctx):
         ctx = ctx,
         features = features,
         cxx_builtin_include_directories = [
-            "/usr/lib/gcc/x86_64-linux-gnu/11/include/",
+            "/usr/lib/gcc/x86_64-linux-gnu/10/include/",
             "/usr/include",
         ],
         toolchain_identifier = "local",

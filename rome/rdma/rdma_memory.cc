@@ -56,7 +56,7 @@ RdmaMemory::RdmaMemory(uint64_t capacity, std::optional<std::string_view> path,
 
   if (!use_hugepages) {
     ROME_TRACE("Not using hugepages; performance might suffer.");
-    auto bytes = ((capacity >> 6) + 1) << 6;
+    auto bytes = ((capacity >> 6) + 1) << 6;  // Round up to nearest 64B
     raw_ = std::unique_ptr<uint8_t[]>(
         reinterpret_cast<uint8_t *>(std::aligned_alloc(64, bytes)));
     ROME_ASSERT(std::get<0>(raw_) != nullptr, "Allocation failed.");

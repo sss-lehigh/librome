@@ -1,4 +1,4 @@
-load(":cc_toolchain_config.bzl", "clang_toolchain_config", "gcc_toolchain_config")
+load("//:cc_toolchain_config.bzl", "clang_toolchain_config", "gcc_toolchain_config")
 load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
 
 package(default_visibility = ["//visibility:public"])

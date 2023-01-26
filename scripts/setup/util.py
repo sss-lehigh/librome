@@ -97,3 +97,9 @@ def try_add_path(path):
 def try_add_bashrc(line):
     if not __check_env(line):
         __add_env(line)
+        
+def try_prepend_bashrc(line):
+    print("prepend to bashrc: ", line)
+    if not __check_env(line):
+        __prepend_env(line)
+        

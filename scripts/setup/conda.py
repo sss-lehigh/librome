@@ -18,14 +18,21 @@ class Conda(HostedResource):
         self.conda = os.path.join(self.install_path, "bin", "conda")
 
     def create_env(self):
-        subprocess.run([self.conda, "env", "create", "-n", self.env_name, "-f",
-                        self.env_file, "-q"],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("Creating conda env: ", self.conda, "env", "create", "-n", self.env_name, "-f",
+                        self.env_file, "-q")
+        ret = subprocess.run([self.conda, "env", "create", "-n", self.env_name, "-f",
+                        self.env_file, "-q"])
+        if ret.returncode != 0:
+            print("Error with conda create env, ret = ", ret)
 
     def init(self):
-        subprocess.run(
-            [self.conda, "init", "--all"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+#         subprocess.run(
+#             [self.conda, "init", "--all"],
+#             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("Running conda init: ", self.conda, " init ", "--all")
+        # pre-pended in reverse order so that source comes first
+        try_prepend_bashrc("conda activate " + self.env_name)
+        try_prepend_bashrc("source ~/miniconda3/etc/profile.d/conda.sh")
 
     def setup(self):
         try:
@@ -41,7 +48,7 @@ class Conda(HostedResource):
             subprocess.run(["rm", self.download_path])
             subprocess.run(
                 f"find {self.install_path} -follow -type f -name '*.a' -delete && find {self.install_path} -follow -type f -name '*.js.map' -delete && {self.install_path}/bin/conda clean -afy",
-                shell=True)
+                shell=True, check=True)
         self.init()
         self.create_env()
-        try_add_bashrc("conda activate " + self.env_name)
+#         try_add_bashrc("conda activate " + self.env_name)

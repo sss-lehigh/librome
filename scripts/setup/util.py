@@ -85,6 +85,13 @@ def __add_env(line):
     if tee.returncode != 0:
         raise RuntimeError('Failed to add line to environment: ' + line)
 
+def __prepend_env(line):
+    print("prepend env: ", line)
+    with open(config['workspace']['env_file'], 'r+') as f:
+        content = f.read()
+        f.seek(0, 0)
+        f.write(line.rstrip('\r\n') + '\n' + content)
+
 # When adding a new path, we first check if the path exists then add it to both the `.bashrc` file and to the `PATH` environment variable.
 
 

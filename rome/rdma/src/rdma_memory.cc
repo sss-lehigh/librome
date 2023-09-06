@@ -1,4 +1,4 @@
-#include "rdma_memory.h"
+#include "rome/rdma/rdma_memory.h"
 
 #include <infiniband/verbs.h>
 #include <sys/mman.h>
@@ -24,7 +24,7 @@ namespace {
 // implemented for Linux-based operating systems.
 absl::StatusOr<int> GetNumHugepages(std::string_view path) {
   // Try to open file.
-  std::ifstream file(path);
+  std::ifstream file(path.data());
   if (!file.is_open()) {
     return UnknownErrorBuilder() << "Failed to open file: " << path;
   }

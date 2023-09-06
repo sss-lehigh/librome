@@ -67,8 +67,6 @@ class Scheduler {
   virtual void Cancel() = 0;
 };
 
-using Cancelation = std::atomic<bool>;
-
 template <typename PromiseT>
 class RoundRobinScheduler : public Scheduler<PromiseT> {
  public:
@@ -143,7 +141,7 @@ class RoundRobinScheduler : public Scheduler<PromiseT> {
       ;
   }
 
-  const Cancelation& Cancelation() const { return canceled_; }
+  const std::atomic<bool>& Cancelation() const { return canceled_; }
 
  private:
   struct CoroWrapper {

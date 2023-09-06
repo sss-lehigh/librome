@@ -4,7 +4,7 @@
 //
 // In the future, this could potentially be replaced with a more robust
 // component (e.g., Zookeeper) but for now we stick with a simple approach.
-#include "rdma_broker.h"
+#include "rome/rdma/rdma_broker.h"
 
 #include <arpa/inet.h>
 #include <asm-generic/errno.h>
@@ -22,7 +22,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <experimental/coroutine>
+#include <coroutine>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -30,12 +30,13 @@
 #include <unordered_map>
 
 #include "absl/status/status.h"
-#include "rdma_device.h"
-#include "rdma_receiver.h"
-#include "rdma_util.h"
+#include "rome/rdma/rdma_device.h"
+#include "rome/rdma/rdma_receiver.h"
+#include "rome/rdma/rdma_util.h"
 #include "rome/logging/logging.h"
 #include "rome/util/coroutine.h"
 #include "rome/util/status_util.h"
+#include "rome/logging/logging.h"
 
 namespace rome {
 

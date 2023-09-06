@@ -25,3 +25,6 @@ third-party
 
 # GDB history
 .gdb_history
+
+# Build
+/*build*

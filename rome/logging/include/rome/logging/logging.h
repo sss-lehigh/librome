@@ -93,6 +93,8 @@ inline void __rome_init_log__() {
 #define ROME_FATAL(...)         \
   SPDLOG_CRITICAL(__VA_ARGS__); \
   abort();
+#else
+#define ROME_FATAL(...) (void)(0); 
 #endif
 
 #define ROME_RETURN(x) [&]() { return x; }

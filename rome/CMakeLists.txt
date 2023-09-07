@@ -1,8 +1,0 @@
-add_subdirectory(colosseum)
-add_subdirectory(gladiators)
-add_subdirectory(internal)
-add_subdirectory(logging)
-add_subdirectory(metrics)
-add_subdirectory(rdma)
-add_subdirectory(testutil)
-add_subdirectory(util)

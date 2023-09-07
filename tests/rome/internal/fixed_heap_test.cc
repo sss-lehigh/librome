@@ -1,4 +1,4 @@
-#include "fixed_heap.h"
+#include "rome/internal/fixed_heap.h"
 
 #include <functional>
 #include <random>

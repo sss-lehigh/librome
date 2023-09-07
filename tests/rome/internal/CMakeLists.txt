@@ -1,1 +1,2 @@
 add_subdirectory(atree)
+add_test_executable(fixed_heap_test fixed_heap_test.cc)

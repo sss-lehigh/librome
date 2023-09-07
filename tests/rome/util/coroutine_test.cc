@@ -1,7 +1,7 @@
-#include "coroutine.h"
+#include "rome/util/coroutine.h"
 
 #include <chrono>
-#include <experimental/coroutine>
+#include <coroutine>
 #include <thread>
 
 #include "gmock/gmock.h"
@@ -29,7 +29,7 @@ Coro task(int task_num, std::vector<int>* out) {
   }
 }
 
-Coro cancellable_task(const Cancelation& canceled) {
+Coro cancellable_task(const std::atomic_bool& canceled) {
   while (!canceled) {
     co_await suspend_always{};
   }

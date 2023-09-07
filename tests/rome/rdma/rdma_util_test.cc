@@ -1,4 +1,4 @@
-#include "rdma_util.h"
+#include "rome/rdma/rdma_util.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

@@ -1,0 +1,1 @@
+add_test_executable(fake_clock_test fake_clock_test.cc)

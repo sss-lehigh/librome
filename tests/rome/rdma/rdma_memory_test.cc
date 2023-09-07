@@ -1,8 +1,8 @@
-#include "rdma_memory.h"
+#include "rome/rdma/rdma_memory.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "rdma_device.h"
+#include "rome/rdma/rdma_device.h"
 #include "rome/logging/logging.h"
 #include "rome/testutil/status_matcher.h"
 

@@ -1,4 +1,4 @@
-#include "rdma_broker.h"
+#include "rome/rdma/rdma_broker.h"
 
 #include <linux/limits.h>
 #include <rdma/rdma_cma.h>
@@ -12,8 +12,8 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "rdma_receiver.h"
-#include "rdma_util.h"
+#include "rome/rdma/rdma_receiver.h"
+#include "rome/rdma/rdma_util.h"
 #include "rome/rdma/rdma_device.h"
 #include "rome/testutil/status_matcher.h"
 #include "rome/util/status_util.h"
@@ -92,7 +92,7 @@ class RdmaBrokerTest : public ::testing::Test {
   void SetUp() {
     ROME_INIT_LOG();
     auto devices = RdmaDevice::GetAvailableDevices();
-    ROME_ASSERT(devices.ok() && !devices->empty(), devices.status().message());
+    ROME_ASSERT(devices.ok() && !devices->empty(), devices.status().message().data());
 
     // Listen on all devices
     broker_ = RdmaBroker::Create(std::nullopt, std::nullopt, &receiver_);

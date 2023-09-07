@@ -1,0 +1,5 @@
+add_test_executable(rdma_util_test rdma_util_test.cc)
+add_test_executable(rdma_memory_test rdma_memory_test.cc)
+add_test_executable(rdma_device_test rdma_device_test.cc)
+add_test_executable(rdma_broker_test rdma_broker_test.cc)
+

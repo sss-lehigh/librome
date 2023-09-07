@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.23)
 
 project(Rome LANGUAGES CXX)
 
+option(HAVE_RDMA_CARD OFF "Set HAVE_RDMA_CARD if you have a mlnx card to test with")
+
 # to include anything in cmake directory
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(utils)

@@ -20,7 +20,7 @@ message(STATUS "Using spdlog version ${spdlog_VERSION}")
 find_package(absl 20210324 REQUIRED) # defines absl::absl
 message(STATUS "Using absl version ${absl_VERSION}")
 
-find_package(GTest 1.11 REQUIRED) #defines GTest::gtest
+find_package(GTest REQUIRED) #defines GTest::gtest
 message(STATUS "Using gtest version ${GTest_VERSION}")
 
 find_package(benchmark 1.6...<1.7 REQUIRED) # google benchmark

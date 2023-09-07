@@ -1,4 +1,4 @@
-#include "workload_driver.h"
+#include "rome/colosseum/workload_driver.h"
 
 #include <chrono>
 #include <memory>

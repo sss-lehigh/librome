@@ -1,0 +1,2 @@
+add_test_executable(metric_test metric_test.cc)
+add_test_executable(stopwatch_test stopwatch_test.cc)

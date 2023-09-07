@@ -1,4 +1,4 @@
-#include "qps_controller.h"
+#include "rome/colosseum/qps_controller.h"
 
 #include <chrono>
 #include <thread>

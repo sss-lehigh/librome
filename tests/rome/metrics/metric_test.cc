@@ -1,13 +1,13 @@
-#include "metric.h"
+#include "rome/metrics/metric.h"
 
 #include <random>
-
-#include "absl/status/statusor.h"
-#include "counter.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/statusor.h"
+
+#include "rome/metrics/counter.h"
 #include "rome/testutil/status_matcher.h"
-#include "summary.h"
+#include "rome/metrics/summary.h"
 
 namespace rome::metrics {
 namespace {

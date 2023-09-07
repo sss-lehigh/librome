@@ -1,0 +1,3 @@
+add_test_executable(qps_controller_test qps_controller_test.cc)
+add_test_executable(streams_test streams_test.cc)
+add_test_executable(workload_driver_test workload_driver_test.cc)

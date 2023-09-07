@@ -9,17 +9,17 @@
 #include "rome/logging/logging.h"
 #include "rome/util/coroutine.h"
 
-#if defined(__clang__)
-#include <experimental/coroutine>
-namespace util {
-using namespace std::experimental;
-#elif defined(__GNUC__) || defined(__GNUG__)
+//#if defined(__clang__)
+//#include <experimental/coroutine>
+//namespace util {
+//using namespace std::experimental;
+//#elif defined(__GNUC__) || defined(__GNUG__)
 #include <coroutine>
 namespace util {
 using namespace std;
-#else
-#error "Unknown compiler"
-#endif
+//#else
+//#error "Unknown compiler"
+//#endif
 
 // Forward declaration necessary so that `from_promise()` is defined for our
 // coroutine handle. There may be a cleaner way to accomplish this, but this how

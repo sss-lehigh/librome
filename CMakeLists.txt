@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.23)
 
 project(Rome LANGUAGES CXX)
 
+# to include anything in cmake directory
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(utils)
+
 set(CXX_STANDARD 20 CACHE STRING "Uses C++20 or 23")
 
 set(CMAKE_CXX_STANDARD ${CXX_STANDARD})
@@ -24,6 +28,10 @@ message(STATUS "Using benchmark version ${benchmark_VERSION}")
 
 find_package(Protobuf REQUIRED) # protobuf
 message(STATUS "Using protobuf version ${Protobuf_VERSION}")
+
+find_package(Coroutines REQUIRED) # defines std::coroutines for linking
+
+find_package(RDMA REQUIRED) # defines rdma::ibverbs and rdma::cm for linking
 
 set(LOG_LEVELS "TRACE;DEBUG;INFO;WARN;ERROR;CRITICAL;OFF")
 
@@ -55,28 +63,10 @@ add_library(rome SHARED
             src/rome/metrics/stopwatch.cc)
 add_library(rome::rome ALIAS rome)
 target_include_directories(rome PUBLIC include)
-target_compile_options(rome PUBLIC -fcoroutines)
 target_compile_definitions(rome PUBLIC ROME_LOG_LEVEL=${LOG_LEVEL})
-target_link_libraries(rome PUBLIC rome::protos ibverbs rdmacm fmt::fmt)
+target_link_libraries(rome PUBLIC rome::protos rdma::ibverbs rdma::cm fmt::fmt std::coroutines)
 target_link_libraries(rome PUBLIC absl::status absl::statusor absl::synchronization)
 
-function(add_test_executable TARGET SOURCE)
-    set(options DISABLE_TEST)
-    set(oneValueArgs "")
-    set(multiValueArgs LIBS)
-
-    cmake_parse_arguments(_ "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
-
-    add_executable(${TARGET} ${SOURCE})
-   
-    foreach(NAME "${TARGET}")
-        target_link_libraries(${NAME} PRIVATE rome GTest::gtest GTest::gtest_main GTest::gmock ${__LIBS})
-    endforeach()
-    
-    if(NOT ${__DISABLE_TEST})
-        add_test(NAME ${TARGET} COMMAND ${TARGET})
-    endif()
-endfunction()
 
 add_subdirectory(tests)
 

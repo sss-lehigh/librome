@@ -106,4 +106,14 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 install(FILES ${PROJECT_SOURCE_DIR}/protos/colosseum.proto DESTINATION protos)
 install(FILES ${PROJECT_SOURCE_DIR}/protos/testutil.proto DESTINATION protos)
 install(FILES ${PROJECT_SOURCE_DIR}/protos/metrics.proto DESTINATION protos)
+# install protos for reuse
 
+install(EXPORT romeTargets
+        FILE romeTargets.cmake
+        NAMESPACE rome::
+        DESTINATION lib/cmake/rome)
+
+install(FILES ${PROJECT_SOURCE_DIR}/share/romeConfig.cmake DESTINATION lib/cmake/rome)
+
+install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindRDMA.cmake DESTINATION lib/cmake)
+install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindCoroutines.cmake DESTINATION lib/cmake)

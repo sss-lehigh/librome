@@ -81,7 +81,9 @@ add_library(rome SHARED
             src/rome/rdma/rdma_memory.cc
             src/rome/metrics/stopwatch.cc)
 add_library(rome::rome ALIAS rome)
-target_include_directories(rome PUBLIC include)
+target_include_directories(rome PUBLIC 
+                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                           $<INSTALL_INTERFACE:include>)
 target_compile_definitions(rome PUBLIC ROME_LOG_LEVEL=${LOG_LEVEL})
 target_link_libraries(rome PUBLIC rome::protos rdma::ibverbs rdma::cm fmt::fmt std::coroutines)
 target_link_libraries(rome PUBLIC absl::status absl::statusor absl::synchronization)
@@ -89,4 +91,19 @@ target_link_libraries(rome PUBLIC absl::status absl::statusor absl::synchronizat
 
 add_subdirectory(tests)
 
+#######################################################################################
+# install rome
+#######################################################################################
+
+install(TARGETS rome protos EXPORT romeTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include)
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include) 
+# install the include dir
+install(FILES ${PROJECT_SOURCE_DIR}/protos/colosseum.proto DESTINATION protos)
+install(FILES ${PROJECT_SOURCE_DIR}/protos/testutil.proto DESTINATION protos)
+install(FILES ${PROJECT_SOURCE_DIR}/protos/metrics.proto DESTINATION protos)
 

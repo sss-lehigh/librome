@@ -5,3 +5,5 @@ add_library(protos SHARED ${PROTO_SRCS})
 add_library(rome::protos ALIAS protos)
 target_include_directories(protos PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/..")
 target_link_libraries(protos PUBLIC protobuf::libprotobuf)
+
+install(FILES ${PROTO_HDRS} DESTINATION include/protos)

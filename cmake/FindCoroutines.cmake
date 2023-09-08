@@ -30,9 +30,11 @@ if(${_found})
     add_library(std::coroutines INTERFACE IMPORTED)
 
     if("cpp${CMAKE_CXX_COMPILER_ID}" MATCHES "cpp.*Clang")
-        target_compile_options(std::coroutines INTERFACE -fcoroutines-ts)
+        target_compile_options(std::coroutines INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-fcoroutines-ts>)
+        target_compile_options(std::coroutines INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler -fcoroutines-ts>)
     elseif("cpp${CMAKE_CXX_COMPILER_ID}" MATCHES "cpp.*GNU")
-        target_compile_options(std::coroutines INTERFACE -fcoroutines)
+        target_compile_options(std::coroutines INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-fcoroutines>)
+        target_compile_options(std::coroutines INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler -fcoroutines>)
     endif()
 endif()
 

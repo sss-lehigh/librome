@@ -1,16 +1,35 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(Rome LANGUAGES CXX)
+project(Rome LANGUAGES CXX VERSION 0.0.0)
+
+#######################################################################################
+# configuration
+#######################################################################################
 
 option(HAVE_RDMA_CARD OFF "Set HAVE_RDMA_CARD if you have a mlnx card to test with")
+option(USE_CUDA OFF "Set USE_CUDA if you want to run tests for NVCC")
+set(LOG_LEVEL "INFO" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
+set(CXX_STANDARD 20 CACHE STRING "Uses C++20 or 23")
+
+#######################################################################################
+# setup module path and standard
+#######################################################################################
 
 # to include anything in cmake directory
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(utils)
 
-set(CXX_STANDARD 20 CACHE STRING "Uses C++20 or 23")
-
 set(CMAKE_CXX_STANDARD ${CXX_STANDARD})
+if(${USE_CUDA})
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD ${CXX_STANDARD})
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
+    message(STATUS "Using host compiler - ${CMAKE_CUDA_HOST_COMPILER}")
+endif()
+
+#######################################################################################
+# find packages
+#######################################################################################
 
 find_package(fmt 8.1...<8.2 REQUIRED) # defines fmt::fmt
 
@@ -35,9 +54,10 @@ find_package(Coroutines REQUIRED) # defines std::coroutines for linking
 
 find_package(RDMA REQUIRED) # defines rdma::ibverbs and rdma::cm for linking
 
+
+
 set(LOG_LEVELS "TRACE;DEBUG;INFO;WARN;ERROR;CRITICAL;OFF")
 
-set(LOG_LEVEL "INFO" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
 
 foreach(L ${LOG_LEVELS})
     if("${LOG_LEVEL}" STREQUAL "${L}")
@@ -50,9 +70,6 @@ if(NOT DEFINED CORRECT_LOG_LEVEL)
 endif()
 
 message(STATUS "Using log level ${LOG_LEVEL}")
-
-
-## TODO add compiler detection for coroutine support
 
 enable_testing()
 

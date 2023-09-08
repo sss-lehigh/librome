@@ -52,19 +52,13 @@ Make sure to have cmake version 3.23 or higher installed as well as a suitable c
 
 librome has been tested with:
 
-|------------------------------------|
 |OS           |  Compiler            |
 |------------------------------------|
 |Ubuntu 22.04 | gcc-11               |
-|------------------------------------|
 |Ubuntu 22.04 | gcc-12               |
-|------------------------------------|
 |Ubuntu 22.04 | clang-15             |
-|------------------------------------|
 |Ubuntu 22.04 | clang-14             |
-|------------------------------------|
 |Ubuntu 22.04 | clang-15 & nvcc-12.2 |
-|------------------------------------|
 
 Get your dependencies from your OS vendor or provide your own. 
 

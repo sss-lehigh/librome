@@ -2,7 +2,7 @@
 
 # Overview
 
-Rome is a collection of useful utilities for research-oriented programming. 
+librome is a collection of useful utilities for research-oriented programming. 
 This is the ethos of this project, to accumulate helpful tools that can serve as the basis for development.
 
 Some current features are:
@@ -21,6 +21,17 @@ The wishlist includes:
 
 As they say, "Rome wasn't built in a day".
 
+# Directory Structure
+
+* include : contains all the include files
+* src : contains sources to be compiled
+* tools : contains tools for interacting with rome
+* scripts : contains setup scripts
+* share : contains cmake files for installation
+* tests : contains tests for building and testing rome
+* cmake : contains files to find dependencies
+* gladiators : experimental tests used for improving rome
+
 # Workload Driver Library (`rome/colosseum`)
 In order to test a system, there must be some kind of workload delivered to it.
 The focus of this library is to provide an easy-to-use library to do so.
@@ -35,7 +46,76 @@ Using a `QpsController` is helpful to determine max throughput by ramping up the
 For more details and examples of how to use this portion of the project, take a peek at the code and tests in `rome/colosseum`.
 The name of the folder is tounge-in-cheek, but the Colosseum was where gladiators put their abilities to the test, so it felt suitable.
 
-# Setup instructions
+# Setup Instructions
+
+Make sure to have cmake version 3.23 or higher installed as well as a suitable compiler.
+
+librome has been tested with:
+
+|------------------------------------|
+|OS           |  Compiler            |
+|------------------------------------|
+|Ubuntu 22.04 | gcc-11               |
+|------------------------------------|
+|Ubuntu 22.04 | gcc-12               |
+|------------------------------------|
+|Ubuntu 22.04 | clang-15             |
+|------------------------------------|
+|Ubuntu 22.04 | clang-14             |
+|------------------------------------|
+|Ubuntu 22.04 | clang-15 & nvcc-12.2 |
+|------------------------------------|
+
+Get your dependencies from your OS vendor or provide your own. 
+
+librome uses:
+
+* spdlog
+* gtest
+* gmock
+* google benchmark
+* absl
+* rdmacm
+* ibverbs
+* fmt
+* protobuf
+* C++ coroutines - provided through gcc or clang
+
+For Ubuntu 22.04 the following packages can be installed through apt: 
+
+* libabsl-dev 
+* librdmacm-dev 
+* libibverbs-dev 
+* libgtest-dev 
+* libbenchmark-dev 
+* libfmt-dev 
+* libspdlog-dev 
+* protobuf-compiler 
+* libgmock-dev
+
+The build process consists of creating a build directory and from that directory running:
+
+```
+$ cmake <project directory>
+$ make -j
+```
+
+Compilation can optionally be configured through defining the following:
+
+* `HAVE_RDMA_CARD`
+* `USE_CUDA`
+* `LOG_LEVEL`
+* `CXX_STANDARD`
+
+These options can be defined by passing -D\<option\>=\<value\> to cmake.
+
+The Environment variables `CXX` and `CUDAHOSTCXX` can be defined to set the compiler (e.g. `CXX=g++-12 cmake .. && make -j` will compile with g++-12).
+
+Make sure to clear your build directory if recompiling with a different compiler.
+
+`make install` will install librome in your default installation location or the directory passed through defining `CMAKE_INSTALL_PREFIX`.
+
+# Old Setup instructions (unsure if this still works)
 The Dockerfile contains all the dependencies required by this project and handles automatically setting up the correct development environment.
 There are enough comments in the Dockerfile itself to understand what is going on, but at a high level its main purpose is to install the tooling necessary to build the project.
 The manually installed packages include (see `Dockerfile` for details):

@@ -79,7 +79,8 @@ add_library(rome SHARED
             src/rome/rdma/rdma_broker.cc  
             src/rome/rdma/rdma_device.cc  
             src/rome/rdma/rdma_memory.cc
-            src/rome/metrics/stopwatch.cc)
+            src/rome/metrics/stopwatch.cc
+            src/rome/util/thread_pool.cc)
 add_library(rome::rome ALIAS rome)
 target_include_directories(rome PUBLIC 
                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -88,8 +89,8 @@ target_compile_definitions(rome PUBLIC ROME_LOG_LEVEL=${LOG_LEVEL})
 target_link_libraries(rome PUBLIC rome::protos rdma::ibverbs rdma::cm fmt::fmt std::coroutines)
 target_link_libraries(rome PUBLIC absl::status absl::statusor absl::synchronization)
 
-
 add_subdirectory(tests)
+add_subdirectory(gladiators)
 
 #######################################################################################
 # install rome

@@ -3,9 +3,10 @@
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
 sudo dpkg -i cuda-keyring_1.1-1_all.deb
 sudo apt-get update
-sudo apt-get -y install cuda-compiler cuda-cudart-dev cuda-nvtx cuda-nvrtc-dev libcurand-dev cuda-cccl
+sudo apt-get -y install cuda-compiler-12-2 cuda-cudart-dev-12-2 cuda-nvtx-12-2 cuda-nvrtc-dev-12-2 libcurand-dev-12-2 cuda-cccl-12-2
 
-CUDA_PATH=/usr/local/cuda
+CUDA_PATH=/usr/local/cuda.12.2
+ls /usr/local/cuda*
 echo "CUDA_PATH=${CUDA_PATH}"
 export CUDA_PATH=${CUDA_PATH}
 export PATH="$CUDA_PATH/bin:$PATH"

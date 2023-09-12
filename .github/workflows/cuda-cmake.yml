@@ -26,17 +26,12 @@ jobs:
         os: [ubuntu-latest]
         build_type: [Release]
         c_compiler: [clang-15]
-        use_cuda: [ON]
         include:
           - os: ubuntu-latest
             c_compiler: clang-15
             cpp_compiler: clang++-15
     steps:
     - uses: actions/checkout@v3
-    - uses: Jimver/cuda-toolkit@v0.2.11
-      id: cuda-toolkit
-      with:
-        cuda: '12.2.0'
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -44,7 +39,11 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-      
+     
+    - name: Install CUDA
+      run: ./cicd/install_cuda_ubuntu.sh
+      shell: bash
+
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y libabsl-dev librdmacm-dev libibverbs-dev libgtest-dev libbenchmark-dev libfmt-dev libspdlog-dev protobuf-compiler libgmock-dev clang-15 clang-14
 
@@ -57,7 +56,7 @@ jobs:
         -DCMAKE_CUDA_HOST_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DUSE_CUDA=${{ matrix.use_cuda }}
+        -DUSE_CUDA=ON
         -S ${{ github.workspace }}
 
     - name: Build

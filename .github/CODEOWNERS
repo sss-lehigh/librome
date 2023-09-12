@@ -5,12 +5,12 @@
 /cicd/              @depaulmillz @amandabaran
 /cmake/             @depaulmillz
 
-/include/           @amandabaran
-/src/               @amandabaran
-/tests/             @amandabaran
-/tools/             @amandabaran
-/protos/            @amandabaran
-/scripts/           @amandabaran
-/share/             @depaulmillz
+/include/           @amandabaran @rdy221
+/src/               @amandabaran @rdy221
+/tests/             @amandabaran @rdy221
+/tools/             @amandabaran @rdy221
+/protos/            @amandabaran @rdy221
+/scripts/           @amandabaran @rdy221
+/share/             @depaulmillz @rdy221
 /CMakeLists.txt     @depaulmillz @amandabaran
 

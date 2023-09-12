@@ -87,6 +87,8 @@ For Ubuntu 22.04 the following packages can be installed through apt:
 * protobuf-compiler 
 * libgmock-dev
 
+`cicd/install_dependencies_ubuntu.sh` is a script for installing these on Ubuntu 22.04.
+
 The build process consists of creating a build directory and from that directory running:
 
 ```

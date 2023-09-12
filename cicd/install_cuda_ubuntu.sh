@@ -15,6 +15,6 @@ export LD_LIBRARY_PATH="$CUDA_PATH/lib64:$LD_LIBRARY_PATH"
 nvcc -V
 
 echo "CUDA_PATH=$CUDA_PATH" >> "$GITHUB_ENV"
-echo "$CUDA_PATH/bin" >> "$GITHUB_ENV" # add to path
+echo "PATH=${PATH}:$CUDA_PATH/bin" >> "$GITHUB_ENV" # add to path
 echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.18)
 
 project(Rome LANGUAGES CXX VERSION 0.0.0)
 

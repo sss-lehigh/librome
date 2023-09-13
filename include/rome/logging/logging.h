@@ -1,3 +1,5 @@
+/// @file
+
 #pragma once
 
 #include <memory>
@@ -14,9 +16,9 @@
 #define SPDLOG_ACTIVE_LEVEL ROME_LOG_LEVEL
 
 #include "rome/testutil/status_matcher.h"
-#include "spdlog/async.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
+#include <spdlog/async.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 inline void __rome_init_log__() {
   auto __rome_log__ = ::spdlog::get("rome");

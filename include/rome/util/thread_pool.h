@@ -6,13 +6,14 @@
 #include <thread>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
+#include <absl/base/thread_annotations.h>
+#include <absl/status/status.h>
 
 namespace util {
 
 using Task = std::pair<std::string, std::function<void()>>;
 
+/// A thread pool
 class ThreadPool {
  public:
   ~ThreadPool();

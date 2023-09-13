@@ -18,19 +18,19 @@
 
 namespace rome {
 
-// For reference, a `WorkloadDriver` with a simple `MappedStream` (i.e.,
-// consisting of one sub-stream) can achieve roughly 1M QPS. This was measured
-// using a client adaptor that does nothing. As the number of constituent
-// streams increases, we expect the maximum throughput to decrease but it is not
-// likely to be the limiting factor in performance.
+/// For reference, a `WorkloadDriver` with a simple `MappedStream` (i.e.,
+/// consisting of one sub-stream) can achieve roughly 1M QPS. This was measured
+/// using a client adaptor that does nothing. As the number of constituent
+/// streams increases, we expect the maximum throughput to decrease but it is not
+/// likely to be the limiting factor in performance.
 template <typename OpType>
 class WorkloadDriver {
  public:
   ~WorkloadDriver();
 
-  // Creates a new `WorkloadDriver` from the constiuent client adaptor and
-  // stream. If not `nullptr`, the QPS controller is used to limit the
-  // throughput of operations fed to the client.
+  /// Creates a new `WorkloadDriver` from the constiuent client adaptor and
+  /// stream. If not `nullptr`, the QPS controller is used to limit the
+  /// throughput of operations fed to the client.
   static std::unique_ptr<WorkloadDriver> Create(
       std::unique_ptr<ClientAdaptor<OpType>> client,
       std::unique_ptr<Stream<OpType>> stream, QpsController* qps_controller,
@@ -41,15 +41,15 @@ class WorkloadDriver {
         qps_sampling_rate.value_or(std::chrono::milliseconds(0))));
   }
 
-  // Calls the client's `Start` method before starting the workload driver,
-  // returning its error if there is one. Operations are then pulled from
-  // `stream_` and passed to `client_`'s `Apply` method. The client will handle
-  // operations until either the given stream is exhausted or `Stop` is called.
+  /// Calls the client's `Start` method before starting the workload driver,
+  /// returning its error if there is one. Operations are then pulled from
+  /// `stream_` and passed to `client_`'s `Apply` method. The client will handle
+  /// operations until either the given stream is exhausted or `Stop` is called.
   absl::Status Start();
 
-  // Stops the workload driver so no new requests are passed to the client.
-  // Then, the client's `Stop` method is called so that any pending operations
-  // can be finalized.
+  /// Stops the workload driver so no new requests are passed to the client.
+  /// Then, the client's `Stop` method is called so that any pending operations
+  /// can be finalized.
   absl::Status Stop();
 
   metrics::Stopwatch* GetStopwatch() { return stopwatch_.get(); }

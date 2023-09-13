@@ -4,39 +4,31 @@
 #include <barrier>
 #include <exception>
 #include <memory>
+#include <coroutine>
 
-#include "absl/status/status.h"
+#include <absl/status/status.h>
 #include "rome/logging/logging.h"
 #include "rome/util/coroutine.h"
 
-//#if defined(__clang__)
-//#include <experimental/coroutine>
-//namespace util {
-//using namespace std::experimental;
-//#elif defined(__GNUC__) || defined(__GNUG__)
-#include <coroutine>
 namespace util {
 using namespace std;
-//#else
-//#error "Unknown compiler"
-//#endif
 
 // Forward declaration necessary so that `from_promise()` is defined for our
 // coroutine handle. There may be a cleaner way to accomplish this, but this how
 // its done here, https://en.cppreference.com/w/cpp/language/coroutines.
 class Promise;
 
-// For our purposes, the return object of a coroutine is just a wrapper for the
-// `promise_type`. Any coroutine that is used with the scheduler must return a
-// `Task`.
+/// For our purposes, the return object of a coroutine is just a wrapper for the
+/// `promise_type`. Any coroutine that is used with the scheduler must return a
+/// `Task`.
 class Coro : public coroutine_handle<Promise> {
  public:
   using promise_type = Promise;
   using handler_type = coroutine_handle<Promise>;
 };
 
-// The promise object of a coroutine dictates behavior when the coroutine first
-// starts, and when it returns. It also can save some state to be queried later.
+/// The promise object of a coroutine dictates behavior when the coroutine first
+/// starts, and when it returns. It also can save some state to be queried later.
 class Promise {
  public:
   Coro get_return_object() {
@@ -51,8 +43,8 @@ class Promise {
   void return_void() {}
 };
 
-// The interface for all coroutine schedulers. A scheduler can add new
-// coroutines, start running, and cancel running. So
+/// The interface for all coroutine schedulers. A scheduler can add new
+/// coroutines, start running, and cancel running. So
 template <typename PromiseT>
 class Scheduler {
  public:
@@ -67,6 +59,7 @@ class Scheduler {
   virtual void Cancel() = 0;
 };
 
+/// Round robin scheduler of coroutines
 template <typename PromiseT>
 class RoundRobinScheduler : public Scheduler<PromiseT> {
  public:
@@ -132,9 +125,9 @@ class RoundRobinScheduler : public Scheduler<PromiseT> {
     }
   }
 
-  // Cancels the scheduler and then waits for all currently scheduled tasks to
-  // complete. Coroutines can obtain a pointer to the cancelation flag using
-  // `Cancelation()` and then check if it has been canceled.
+  /// Cancels the scheduler and then waits for all currently scheduled tasks to
+  /// complete. Coroutines can obtain a pointer to the cancelation flag using
+  /// `Cancelation()` and then check if it has been canceled.
   void Cancel() override {
     canceled_ = true;
     while (curr_ != nullptr)

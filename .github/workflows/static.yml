@@ -49,12 +49,8 @@ jobs:
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DBUILD_DOCS=ON
-          -S ${{ github.workspace }} && make docs
-  
-      - name: Build
-        # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-        
+          -S ${{ github.workspace }} && cd ${{ steps.strings.outputs.build-output-dir }} && make docs
+ 
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact

@@ -40,7 +40,7 @@ jobs:
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y doxygen libabsl-dev librdmacm-dev libibverbs-dev libgtest-dev libbenchmark-dev libfmt-dev libspdlog-dev protobuf-compiler libgmock-dev clang-15 clang-14
+        run: sudo apt-get update && sudo apt-get install -y doxygen doxygen-latex graphviz libabsl-dev librdmacm-dev libibverbs-dev libgtest-dev libbenchmark-dev libfmt-dev libspdlog-dev protobuf-compiler libgmock-dev clang-15 clang-14
   
       - name: Configure CMake
         shell: bash

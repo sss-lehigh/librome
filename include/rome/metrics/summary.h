@@ -9,31 +9,31 @@
 
 namespace rome::metrics {
 
-// A `Summary` maintains summary statistics about a given stream of values. The
-// computed statistics include the min and max, the 50th, 90th, 95th, 99th,
-// and 99.9th percentiles, and the mean and standard deviation.
-//
-// Internally,the values are maintained by respective member variables tracking
-// the average (of the statistic) over time. As new samples arrive, they are
-// placed in a binary search tree (i.e, `rome::ATree`) that augments each node
-// with the total number of nodes in the subtree rooted at the node. This is
-// then used to query the tree for the node with a given rank, which is computed
-// from the given percentile and the total number of samples in the tree. To
-// save space, whenever a sample matches an existing node, we update the nodes
-// value to reflect the number of matching samples. The above is peformed for
-// some given window of samples, at which point the summary statistics are
-// updated and the sample tree is cleared for the next window. Each of the
-// quantile statistics are updated by computing the weighted
-//
-// The approach is naive and there are other ways to accomplish the same goal.
-// For example,
-// http://infolab.stanford.edu/~datar/courses/cs361a/papers/quantiles.pdf gives
-// an algorithm to maintain online summary statistics in a very memory friendly
-// way. From their results, it takes fewer than 2500 tuples to achieve an error
-// bound of 0.005 for 1B samples. Another option is a C++ implementation of the
-// T-Digest data structure (https://github.com/tdunning/t-digest,
-// https://github.com/derrickburns/tdigest), which uses k-means clustering to
-// efficiently compute approximate quantiles.
+/// A `Summary` maintains summary statistics about a given stream of values. The
+/// computed statistics include the min and max, the 50th, 90th, 95th, 99th,
+/// and 99.9th percentiles, and the mean and standard deviation.
+///
+/// Internally,the values are maintained by respective member variables tracking
+/// the average (of the statistic) over time. As new samples arrive, they are
+/// placed in a binary search tree (i.e, `rome::ATree`) that augments each node
+/// with the total number of nodes in the subtree rooted at the node. This is
+/// then used to query the tree for the node with a given rank, which is computed
+/// from the given percentile and the total number of samples in the tree. To
+/// save space, whenever a sample matches an existing node, we update the nodes
+/// value to reflect the number of matching samples. The above is peformed for
+/// some given window of samples, at which point the summary statistics are
+/// updated and the sample tree is cleared for the next window. Each of the
+/// quantile statistics are updated by computing the weighted
+///
+/// The approach is naive and there are other ways to accomplish the same goal.
+/// For example,
+/// http://infolab.stanford.edu/~datar/courses/cs361a/papers/quantiles.pdf gives
+/// an algorithm to maintain online summary statistics in a very memory friendly
+/// way. From their results, it takes fewer than 2500 tuples to achieve an error
+/// bound of 0.005 for 1B samples. Another option is a C++ implementation of the
+/// T-Digest data structure (https://github.com/tdunning/t-digest,
+/// https://github.com/derrickburns/tdigest), which uses k-means clustering to
+/// efficiently compute approximate quantiles.
 template <typename T>
 class Summary : public Metric, public Accumulator<Summary<T>> {
   static_assert(std::is_arithmetic_v<T>);

@@ -46,13 +46,14 @@ inline uint64_t RdtscpRelease() {
 constexpr double KhzToGhz(int khz) { return double(khz) / 1e6; }
 
 }  // namespace
+
 class Stopwatch : public Metric {
 public:
-  // A split is used to measure a period of time. The period starts when the
-  // `Split` is first created and completes whenever a call to `Stop` is made.
-  // The purpose of having a specific object to measure each period is to enable
-  // monitoring more complex control flows. A `Split` object can be moved
-  //
+  /// A split is used to measure a period of time. The period starts when the
+  /// `Split` is first created and completes whenever a call to `Stop` is made.
+  /// The purpose of having a specific object to measure each period is to enable
+  /// monitoring more complex control flows. A `Split` object can be moved
+  ///
   class Split {
   public:
     Split(uint32_t tsc_freq_khz, uint64_t start) : Split(tsc_freq_khz, start, RdtscpAcquire()) {}
@@ -117,25 +118,26 @@ public:
 
   Split GetLapSplit() { return Split(tsc_freq_khz_, lap_); }
 
-  // Stops the stopwatch. Future calls to `Split` will still generate new splits
-  // that can be used for timing, but the internal split maintained by the
-  // stopwatch is fixed.
+  /// Stops the stopwatch. Future calls to `Split` will still generate new splits
+  /// that can be used for timing, but the internal split maintained by the
+  /// stopwatch is fixed.
   void Stop() { end_ = RdtscpRelease(); }
 
-  // Returns the total runtime measured by the stopwatch. The return value is
-  // only valid after `Stop` has been called.
+  /// Returns the total runtime measured by the stopwatch. The return value is
+  /// only valid after `Stop` has been called.
   std::chrono::nanoseconds GetRuntimeNanoseconds() {
     return Split(tsc_freq_khz_, start_, end_).GetRuntimeNanoseconds();
   }
 
 
+  /// Gets a string representation
   std::string ToString() override {
     std::stringstream ss;
     ss << "runtime: " << GetRuntimeNanoseconds().count() << " ns";
     return ss.str();
   }
 
-
+  /// Gets a protobuf representation
   MetricProto ToProto() override {
     MetricProto proto;
     proto.set_name(name_);

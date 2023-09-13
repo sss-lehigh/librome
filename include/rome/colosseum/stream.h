@@ -1,6 +1,6 @@
 #pragma once
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
 
 namespace rome {
 
@@ -13,16 +13,16 @@ inline bool IsStreamTerminated(const absl::Status &status) {
          status.message() == "Stream terminated.";
 }
 
-// Represents a stream of input for benchmarking a system. The common use is to
-// define the template parameter to be some struct that contains the necessary
-// information for a given operation. Streams can represent an infinite sequence
-// of random numbers, sequential values, or can be backed by a trace file. By
-// encapsulating any input in a stream, workload driver code can abstact out the
-// work of generating values.
-//
-// Calling `Next` on a stream of numbers returns the next value in the stream,
-// or `StreamTerminatedStatus`. If a user calls `Terminate` then all future
-// calls to next will produce `StreamTerminatedStatus`.
+/// Represents a stream of input for benchmarking a system. The common use is to
+/// define the template parameter to be some struct that contains the necessary
+/// information for a given operation. Streams can represent an infinite sequence
+/// of random numbers, sequential values, or can be backed by a trace file. By
+/// encapsulating any input in a stream, workload driver code can abstact out the
+/// work of generating values.
+///
+/// Calling `Next` on a stream of numbers returns the next value in the stream,
+/// or `StreamTerminatedStatus`. If a user calls `Terminate` then all future
+/// calls to next will produce `StreamTerminatedStatus`.
 template <typename T> class Stream {
 public:
   Stream() : terminated_(false) {}

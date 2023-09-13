@@ -1,7 +1,8 @@
 #pragma once
 #include <cstdint>
 
-#include "absl/status/statusor.h"
+#include <absl/status/statusor.h>
+
 #include "metric.h"
 
 namespace rome::metrics {

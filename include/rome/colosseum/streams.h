@@ -1,3 +1,5 @@
+/// @file
+
 #pragma once
 #include <algorithm>
 #include <functional>
@@ -9,7 +11,8 @@
 #include <valarray>
 #include <vector>
 
-#include "absl/status/statusor.h"
+#include <absl/status/statusor.h>
+
 #include "stream.h"
 
 namespace rome {
@@ -58,12 +61,12 @@ template <typename... Args>
 using UniformIntStream =
     RandomDistributionStream<std::uniform_int_distribution<int>, Args...>;
 
-// A `WeightedStream` randomly picks values from a given enum `E` with a
-// distribution following the provided weights. The index of each weight in the
-// `weights` vector maps to the corresponding enum value. We use a simple
-// algorithm in which we insert the enum value into `output_` a number of times
-// equivalent to its weight. Then, when sampling we sample uniformly into the
-// `output_` and return the enum value.
+/// A `WeightedStream` randomly picks values from a given enum `E` with a
+/// distribution following the provided weights. The index of each weight in the
+/// `weights` vector maps to the corresponding enum value. We use a simple
+/// algorithm in which we insert the enum value into `output_` a number of times
+/// equivalent to its weight. Then, when sampling we sample uniformly into the
+/// `output_` and return the enum value.
 template <typename E>
 class WeightedStream : public Stream<E> {
   static_assert(std::is_enum<E>::value);

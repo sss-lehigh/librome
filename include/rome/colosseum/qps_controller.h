@@ -6,17 +6,18 @@
 #include <mutex>
 #include <numeric>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/synchronization/mutex.h"
+#include <absl/base/thread_annotations.h>
+#include <absl/synchronization/mutex.h>
+
 #include "rome/util/clocks.h"
 #include "rome/util/duration_util.h"
 
 namespace rome {
 
-// A `QpsController` is responsible for modulating the number of operations per
-// second that is produced by a given workload. Controlled components call
-// `Wait` before every operation and are stalled appropriately to keep the QPS
-// at the expected rate.
+/// A `QpsController` is responsible for modulating the number of operations per
+/// second that is produced by a given workload. Controlled components call
+/// `Wait` before every operation and are stalled appropriately to keep the QPS
+/// at the expected rate.
 class QpsController {
  public:
   virtual ~QpsController() = default;

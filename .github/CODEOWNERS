@@ -4,6 +4,7 @@
 /.github/           @depaulmillz @amandabaran
 /cicd/              @depaulmillz @amandabaran
 /cmake/             @depaulmillz
+/Doxyfile           @depaulmillz @amandabaran
 
 /include/           @amandabaran
 /src/               @amandabaran

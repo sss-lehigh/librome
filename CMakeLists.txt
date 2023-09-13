@@ -88,7 +88,7 @@ add_library(rome SHARED
             src/rome/rdma/rdma_broker.cc  
             src/rome/rdma/rdma_device.cc  
             src/rome/rdma/rdma_memory.cc
-            src/rome/metrics/stopwatch.cc
+            #src/rome/metrics/stopwatch.cc
             src/rome/util/thread_pool.cc)
 add_library(rome::rome ALIAS rome)
 target_include_directories(rome PUBLIC 
@@ -127,3 +127,4 @@ install(FILES ${PROJECT_SOURCE_DIR}/share/romeConfig.cmake DESTINATION lib/cmake
 
 install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindRDMA.cmake DESTINATION lib/cmake)
 install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindCoroutines.cmake DESTINATION lib/cmake)
+

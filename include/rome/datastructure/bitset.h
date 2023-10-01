@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <concepts>
+#include <cassert>
 
 #include "rome/rome.h"
 
@@ -21,13 +22,12 @@ class uint8_bitset {
 public:
 
 
-  static constexpr uint8_bitset<N> all_set_bits = []() constexpr -> uint8_bitset<N> {
-    static_assert(std::is_constant_evaluated());
+  static constexpr uint8_t all_set_bits = []() constexpr -> uint8_t {
     uint8_bitset<N> result;
     for(int i = 0; i < N; ++i) {
       result.set(i, Bool<true>{}); 
     }
-    return result;
+    return static_cast<uint8_t>(result);
   }();
 
   static constexpr int bits = N;
@@ -60,6 +60,7 @@ public:
    */
   template<bool x>
   ROME_HOST_DEVICE constexpr void set(uint8_t bit, Bool<x>) {
+    assert(bit < N);
     if constexpr (x == true) {
       data |= (0x1 << bit);
     } else {
@@ -69,6 +70,7 @@ public:
 
   /// Get bit
   ROME_HOST_DEVICE constexpr bool get(uint8_t bit) const {
+    assert(bit < N);
     return ((data >> bit) & 0x1) == 0x1;
   }
 
@@ -78,11 +80,11 @@ public:
   }
 
   ROME_HOST_DEVICE constexpr bool operator==(const uint8_bitset<bits>& rhs) const {
-    return (all_set_bits.data & rhs.data) == (all_set_bits.data & data); 
+    return (all_set_bits & rhs.data) == (all_set_bits & data); 
   }
 
   ROME_HOST_DEVICE constexpr bool operator!=(const uint8_bitset<bits>& rhs) const {
-    return (all_set_bits.data & rhs.data) != (all_set_bits.data & data); 
+    return (all_set_bits & rhs.data) != (all_set_bits & data); 
   }
 
 private:
@@ -92,7 +94,7 @@ private:
 
 template<int N>
 ROME_HOST_DEVICE constexpr uint8_bitset<N> get_all_set_bits(Int<N>) {
-  return uint8_bitset<N>::all_set_bits;
+  return uint8_bitset<N>(uint8_bitset<N>::all_set_bits);
 }
 
 }

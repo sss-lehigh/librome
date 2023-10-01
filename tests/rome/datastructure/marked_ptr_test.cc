@@ -16,6 +16,20 @@ TEST(MarkedPtrTest, MatchesReference) {
 
   // TODO write reference code
 
+  for (int i = 0; i < 10000; ++i) {
+    bool val = rand() % 1;
+    int idx = rand() % 2;
+    bits.set(idx, val);
+    if (val) {
+      ptr = ptr.set_marked(idx);
+    } else {
+      ptr = ptr.set_unmarked(idx);
+    }
+    EXPECT_TRUE(static_cast<long long*>(ptr) == data);
+    EXPECT_TRUE(ptr.marks() == bits);
+
+  }
+
   delete data;
 }
 

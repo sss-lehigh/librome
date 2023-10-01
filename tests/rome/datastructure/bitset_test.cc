@@ -13,7 +13,7 @@ TEST(BitsetTest, MatchesReference) {
   uint8_bitset<4> bits;
 
   for(int j = 0; j < 4; ++j) {
-    EXPECT_TRUE(reference[idx] == bits.get(idx));
+    EXPECT_TRUE(reference[j] == bits.get(j));
   }
   for(int i = 0; i < 100000; ++i) {
     int idx = rand() % 4;
@@ -22,7 +22,7 @@ TEST(BitsetTest, MatchesReference) {
     bits.set(idx, val);
 
     for(int j = 0; j < 4; ++j) {
-      EXPECT_TRUE(reference[idx] == bits.get(idx));
+      EXPECT_TRUE(reference[j] == bits.get(j));
     }
 
   }

@@ -20,6 +20,16 @@ template<int N>
 class uint8_bitset {
 public:
 
+
+  static constexpr uint8_bitset<N> all_set_bits = []() constexpr -> uint8_bitset<N> {
+    static_assert(std::is_constant_evaluated());
+    uint8_bitset<N> result;
+    for(int i = 0; i < N; ++i) {
+      result.set(i, Bool<true>{}); 
+    }
+    return result;
+  }();
+
   static constexpr int bits = N;
 
   static_assert(N <= 8);
@@ -67,6 +77,14 @@ public:
     return data;
   }
 
+  ROME_HOST_DEVICE constexpr bool operator==(const uint8_bitset<bits>& rhs) const {
+    return (all_set_bits.data & rhs.data) == (all_set_bits.data & data); 
+  }
+
+  ROME_HOST_DEVICE constexpr bool operator!=(const uint8_bitset<bits>& rhs) const {
+    return (all_set_bits.data & rhs.data) != (all_set_bits.data & data); 
+  }
+
 private:
   uint8_t data = 0x0;
 };
@@ -74,14 +92,7 @@ private:
 
 template<int N>
 ROME_HOST_DEVICE constexpr uint8_bitset<N> get_all_set_bits(Int<N>) {
-  static_assert(std::is_constant_evaluated());
-  uint8_bitset<N> result;
-
-  for(int i = 0; i < N; ++i) {
-    result.set(i, Bool<true>{}); 
-  }
-
-  return result;
+  return uint8_bitset<N>::all_set_bits;
 }
 
 }

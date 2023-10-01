@@ -1,17 +1,18 @@
 # Amanda owns everything on this
-*                   @amandabaran
+*                               @amandabaran
 
-/.github/           @depaulmillz @amandabaran
-/cicd/              @depaulmillz @amandabaran
-/cmake/             @depaulmillz
-/Doxyfile           @depaulmillz @amandabaran
+/.github/                       @depaulmillz @amandabaran
+/cicd/                          @depaulmillz @amandabaran
+/cmake/                         @depaulmillz
+/Doxyfile                       @depaulmillz @amandabaran
 
-/include/           @amandabaran @rdy221
-/src/               @amandabaran @rdy221
-/tests/             @amandabaran @rdy221
-/tools/             @amandabaran @rdy221
-/protos/            @amandabaran @rdy221
-/scripts/           @amandabaran @rdy221
-/share/             @depaulmillz @rdy221
-/CMakeLists.txt     @depaulmillz @amandabaran
+/include/                       @amandabaran @rdy221
+/include/rome/datastructure/    @amandabaran @rdy221 @depaulmillz
+/src/                           @amandabaran @rdy221
+/tests/                         @amandabaran @rdy221
+/tools/                         @amandabaran @rdy221
+/protos/                        @amandabaran @rdy221
+/scripts/                       @amandabaran @rdy221
+/share/                         @depaulmillz @rdy221
+/CMakeLists.txt                 @depaulmillz @amandabaran
 

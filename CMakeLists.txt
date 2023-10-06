@@ -11,6 +11,7 @@ option(USE_CUDA OFF "Set USE_CUDA if you want to run tests for NVCC")
 option(BUILD_DOCS OFF "Set to build documentation")
 set(LOG_LEVEL "INFO" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
 set(CXX_STANDARD 20 CACHE STRING "Uses C++20 or 23")
+set(DSPDLOG_FMT_EXTERNAL "ON")
 
 #######################################################################################
 # setup module path and standard

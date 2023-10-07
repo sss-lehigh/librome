@@ -77,14 +77,14 @@ librome uses:
 
 For Ubuntu 22.04 the following packages can be installed through apt: 
 
-* libabsl-dev 
-* librdmacm-dev 
-* libibverbs-dev 
-* libgtest-dev 
-* libbenchmark-dev 
-* libfmt-dev 
-* libspdlog-dev 
-* protobuf-compiler 
+* libabsl-dev
+* librdmacm-dev
+* libibverbs-dev
+* libgtest-dev
+* libbenchmark-dev
+* libfmt-dev
+* libspdlog-dev
+* protobuf-compiler
 * libgmock-dev
 
 `cicd/install_dependencies_ubuntu.sh` is a script for installing these on Ubuntu 22.04.
@@ -110,6 +110,17 @@ The Environment variables `CXX` and `CUDAHOSTCXX` can be defined to set the comp
 Make sure to clear your build directory if recompiling with a different compiler.
 
 `make install` will install librome in your default installation location or the directory passed through defining `CMAKE_INSTALL_PREFIX`.
+
+## Docker
+
+Create and run a docker container to emulate the build enviornment with the minimum dependencies installed
+
+```{bash}
+docker build --tag sss-dev --file DevDockerfile .
+docker run --privileged --rm -v {MOUNT_DIR}:/home --name sss -it sss-dev
+```
+
+You can then develop from that container using the Dev Container extension so you can take full advantage of syntax highlighting and be able to build locally.
 
 # Old Setup instructions (unsure if this still works)
 The Dockerfile contains all the dependencies required by this project and handles automatically setting up the correct development environment.
@@ -150,5 +161,3 @@ One peculiarity for UTM's `davfs` setup is that it requires a username and passw
 When prompted, just hit enter.
 To avoid the prompt altogether, you can update `/etc/davfs2/secrets` to include a line for the hosted files.
 In my configuration, I simply put the following line: `http://localhost:9843 user passwd`.
-
-## Docker

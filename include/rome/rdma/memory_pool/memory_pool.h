@@ -10,7 +10,6 @@
 #include <thread>
 #include <type_traits>
 #include <unordered_map>
-#include <mutex>
 
 #include "protos/rdma.pb.h"
 #include "remote_ptr.h"
@@ -19,9 +18,6 @@
 #include "rome/rdma/connection_manager/connection.h"
 #include "rome/rdma/connection_manager/connection_manager.h"
 #include "rome/rdma/rmalloc/rmalloc.h"
-#include "rome/util/thread_util.h"
-
-#define THREAD_MAX 50
 
 namespace rome::rdma {
 
@@ -64,8 +60,7 @@ class MemoryPool {
 
   inline MemoryPool(
       const Peer &self,
-      std::unique_ptr<ConnectionManager<channel_type>> connection_manager, 
-      bool is_shared);
+      std::unique_ptr<ConnectionManager<channel_type>> connection_manager);
 
   class DoorbellBatch {
    public:
@@ -185,25 +180,14 @@ class MemoryPool {
   template <typename T>
   remote_ptr<T> Read(remote_ptr<T> ptr, remote_ptr<T> prealloc = remote_nullptr,
                      std::atomic<bool> *kill = nullptr);
-  
-  template <typename T>
-  remote_ptr<T> ExtendedRead(remote_ptr<T> ptr, int size, remote_ptr<T> prealloc = remote_nullptr,
-                     std::atomic<bool> *kill = nullptr);
 
   template <typename T>
   remote_ptr<T> PartialRead(remote_ptr<T> ptr, size_t offset, size_t bytes,
                             remote_ptr<T> prealloc = remote_nullptr);
 
-  enum RDMAWritePolicy {
-    WaitForResponse,
-    FireAndForget, // If the QP was created with sq_sig_all=1, there won't be any effect to this flag
-  };
-
   template <typename T>
   void Write(remote_ptr<T> ptr, const T &val,
-             remote_ptr<T> prealloc = remote_nullptr, 
-             RDMAWritePolicy writePolicy = WaitForResponse, 
-             int inline_max_size = -1);
+             remote_ptr<T> prealloc = remote_nullptr);
 
   template <typename T>
   T AtomicSwap(remote_ptr<T> ptr, uint64_t swap, uint64_t hint = 0);
@@ -221,39 +205,22 @@ class MemoryPool {
     return GetRemotePtr<T>(reinterpret_cast<const T *>(mr_->addr));
   }
 
-  /// @brief Identify an op thread to the service "worker" thread. (Must be done before operations can be run)
-  void RegisterThread();
-
-  // todo: Do I need this?
-  void KillWorkerThread();
-
  private:
   template <typename T>
   inline void ReadInternal(remote_ptr<T> ptr, size_t offset, size_t bytes,
                            size_t chunk_size, remote_ptr<T> prealloc,
                            std::atomic<bool> *kill = nullptr);
 
-  void WorkerThread();
-
   Peer self_;
-  bool is_shared_;
 
-  std::mutex control_lock_;
-  std::mutex rdma_per_read_lock_;
-
-  uint64_t id_gen = 0;
-  std::unordered_set<uint64_t> wr_ids;
-  std::unordered_map<std::thread::id, uint64_t> thread_ids;
-  std::condition_variable cond_vars[THREAD_MAX]; // max of "THREAD_MAX" threads, can trivially increase
-  std::atomic<bool> mailboxes[THREAD_MAX];
-  bool run_worker = true;
-  std::mutex mutex_vars[THREAD_MAX];
+  volatile uint64_t *prev_ = nullptr;
 
   std::unique_ptr<ConnectionManager<channel_type>> connection_manager_;
   std::unique_ptr<rdma_memory_resource> rdma_memory_;
   ibv_mr *mr_;
 
   std::unordered_map<uint16_t, conn_info_t> conn_info_;
+  ibv_send_wr send_wr_{};
 
   rome::metrics::Summary<size_t> rdma_per_read_;
 };

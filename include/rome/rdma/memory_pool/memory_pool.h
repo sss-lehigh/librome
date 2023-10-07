@@ -25,11 +25,6 @@
 
 namespace rome::rdma {
 
-using ::rome::rdma::EmptyRdmaAccessor;
-using ::rome::rdma::RdmaChannel;
-using ::rome::rdma::RemoteObjectProto;
-using ::rome::rdma::TwoSidedRdmaMessenger;
-
 class MemoryPool {
 #ifndef ROME_MEMORY_POOL_MESSENGER_CAPACITY
   static constexpr size_t kMemoryPoolMessengerCapacity = 1 << 12;

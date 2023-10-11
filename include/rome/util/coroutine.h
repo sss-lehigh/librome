@@ -8,7 +8,6 @@
 
 #include <absl/status/status.h>
 #include "rome/logging/logging.h"
-#include "rome/util/coroutine.h"
 
 namespace util {
 using namespace std;

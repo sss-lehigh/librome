@@ -1,0 +1,5 @@
+if(NOT ${HAVE_RDMA_CARD})
+add_test_executable(rmalloc_test rmalloc_test.cc DISABLE_TEST)
+else()
+add_test_executable(rmalloc_test rmalloc_test.cc)
+endif()

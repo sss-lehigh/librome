@@ -94,6 +94,8 @@ target_include_directories(rome PUBLIC
                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                            $<INSTALL_INTERFACE:include>)
 target_compile_definitions(rome PUBLIC ROME_LOG_LEVEL=${LOG_LEVEL})
+# We are defining an external fmt package, we don't need spdlog's internal one
+target_compile_definitions(rome PUBLIC SPDLOG_FMT_EXTERNAL=ON)
 target_link_libraries(rome PUBLIC rome::protos rdma::ibverbs rdma::cm fmt::fmt std::coroutines)
 target_link_libraries(rome PUBLIC absl::status absl::statusor absl::synchronization)
 

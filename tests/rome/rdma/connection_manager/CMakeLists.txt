@@ -1,0 +1,5 @@
+if(NOT ${HAVE_RDMA_CARD})
+add_test_executable(connection_manager_test connection_manager_test.cc DISABLE_TEST)
+else()
+add_test_executable(connection_manager_test connection_manager_test.cc)
+endif()

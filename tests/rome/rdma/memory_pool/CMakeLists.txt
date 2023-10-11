@@ -1,0 +1,7 @@
+if(NOT ${HAVE_RDMA_CARD})
+add_test_executable(memory_pool_test memory_pool_test.cc DISABLE_TEST)
+add_test_executable(remote_ptr_test remote_ptr_test.cc DISABLE_TEST)
+else()
+add_test_executable(memory_pool_test memory_pool_test.cc)
+add_test_executable(remote_ptr_test remote_ptr_test.cc)
+endif()

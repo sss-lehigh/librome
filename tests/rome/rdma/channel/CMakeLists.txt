@@ -1,0 +1,5 @@
+if(NOT ${HAVE_RDMA_CARD})
+add_test_executable(twosided_messenger_test twosided_messenger_test.cc DISABLE_TEST)
+else()
+add_test_executable(twosided_messenger_test twosided_messenger_test.cc)
+endif()

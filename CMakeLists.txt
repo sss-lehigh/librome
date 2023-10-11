@@ -11,7 +11,6 @@ option(USE_CUDA OFF "Set USE_CUDA if you want to run tests for NVCC")
 option(BUILD_DOCS OFF "Set to build documentation")
 set(LOG_LEVEL "INFO" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
 set(CXX_STANDARD 20 CACHE STRING "Uses C++20 or 23")
-set(DSPDLOG_FMT_EXTERNAL "ON")
 
 #######################################################################################
 # setup module path and standard
@@ -95,6 +94,8 @@ target_include_directories(rome PUBLIC
                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                            $<INSTALL_INTERFACE:include>)
 target_compile_definitions(rome PUBLIC ROME_LOG_LEVEL=${LOG_LEVEL})
+# We are defining an external fmt package, we don't need spdlog's internal one
+target_compile_definitions(rome PUBLIC SPDLOG_FMT_EXTERNAL=ON)
 target_link_libraries(rome PUBLIC rome::protos rdma::ibverbs rdma::cm fmt::fmt std::coroutines)
 target_link_libraries(rome PUBLIC absl::status absl::statusor absl::synchronization)
 

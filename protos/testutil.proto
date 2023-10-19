@@ -5,3 +5,7 @@ package rome.testutil;
 message RdmaChannelTestProto {
   optional string message = 1;
 };
+
+message ConnectionManagerTestProto {
+  optional string message = 1;
+};

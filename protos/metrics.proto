@@ -23,17 +23,17 @@ message SummaryProto {
   // Measurement units
   optional string units = 1;
 
-  // Total number of samples collected.
-  optional uint64 count = 2;
-
   // Summary statistics
-  optional double mean = 3;
-  optional double stddev = 4;
-  optional double min = 5;
+  optional double mean = 2;
+  optional double stddev = 3;
+  optional double min = 4;
   optional double p50 = 6;
   optional double p90 = 7;
   optional double p95 = 8;
   optional double p99 = 9;
   optional double p999 = 10;
   optional double max = 11;
+
+  // Total number of samples collected.
+  optional uint64 count = 12;
 };

@@ -11,8 +11,8 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
-#include "rome/util/macros.h"
 #include "metadata.h"
+#include "rome/util/macros.h"
 #include "value.h"
 #include "visitor.h"
 
@@ -211,6 +211,7 @@ class ATree {
 
 template <class K, class V, class M, class Visitor, class Accessor>
 ATree<K, V, M, Visitor, Accessor>::~ATree() {
+  // if (root_ == nullptr) return;  // Nothing to do
   cleared_.push_back(root_.left());
   for (auto* c : cleared_) {
     std::deque<node_type*> to_delete;

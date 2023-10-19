@@ -1,4 +1,4 @@
-#include "rdma_device.h"
+#include "rome/rdma/rdma_device.h"
 
 #include <infiniband/verbs.h>
 

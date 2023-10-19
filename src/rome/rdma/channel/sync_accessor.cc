@@ -1,4 +1,4 @@
-#include "sync_accessor.h"
+#include "rome/rdma/channel/sync_accessor.h"
 
 #include <asm-generic/errno-base.h>
 #include <infiniband/verbs.h>

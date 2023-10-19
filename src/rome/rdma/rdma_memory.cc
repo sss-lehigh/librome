@@ -1,4 +1,4 @@
-#include "rdma_memory.h"
+#include "rome/rdma/rdma_memory.h"
 
 #include <infiniband/verbs.h>
 #include <sys/mman.h>
@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <memory>
+#include <string>
 
 #include "absl/status/statusor.h"
 #include "rome/logging/logging.h"
@@ -23,8 +24,9 @@ namespace {
 // Tries to read the number of available hugepages from the system. This is only
 // implemented for Linux-based operating systems.
 absl::StatusOr<int> GetNumHugepages(std::string_view path) {
+  auto str = std::string(path);
   // Try to open file.
-  std::ifstream file(path);
+  std::ifstream file(str);
   if (!file.is_open()) {
     return UnknownErrorBuilder() << "Failed to open file: " << path;
   }
@@ -34,9 +36,8 @@ absl::StatusOr<int> GetNumHugepages(std::string_view path) {
   file >> nr_hugepages;
   if (!file.fail()) {
     return nr_hugepages;
-  } else {
-    return absl::UnknownError("Failed to read nr_hugepages");
-  }
+  } 
+  return absl::UnknownError("Failed to read nr_hugepages");
 }
 
 }  // namespace

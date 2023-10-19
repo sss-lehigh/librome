@@ -1,6 +1,7 @@
 /// @file
 
 #pragma once
+
 #include <algorithm>
 #include <functional>
 #include <initializer_list>

@@ -4,14 +4,16 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "protos/testutil.pb.h"
 #include "rdma_accessor.h"
 #include "rdma_channel.h"
-#include "protos/testutil.pb.h"
 #include "rome/rdma/rdma_broker.h"
 
-namespace rome::rdma {
+namespace rome {
 namespace {
 
+using ::rome::RdmaBroker;
+using ::rome::RdmaReceiverInterface;
 using ::util::InternalErrorBuilder;
 
 constexpr char kServer[] = "10.0.0.1";
@@ -216,4 +218,4 @@ TEST_F(RdmaChannelTest, LargeProtoExhaustsBuffer) {
 }
 
 }  // namespace
-}  // namespace rome::rdma
+}  // namespace rome

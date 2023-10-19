@@ -85,10 +85,13 @@ enable_testing()
 add_subdirectory(protos)
 
 add_library(rome SHARED
+            src/rome/metrics/stopwatch.cc
             src/rome/rdma/rdma_broker.cc  
             src/rome/rdma/rdma_device.cc  
             src/rome/rdma/rdma_memory.cc
-            src/rome/util/thread_pool.cc)
+            src/rome/util/thread_pool.cc
+            src/rome/rdma/channel/rdma_channel.cc
+            src/rome/rdma/channel/sync_accessor.cc)
 add_library(rome::rome ALIAS rome)
 target_include_directories(rome PUBLIC 
                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

@@ -1,4 +1,4 @@
-#include "rdma_broker.h"
+#include "rome/rdma/rdma_broker.h"
 
 #include <linux/limits.h>
 #include <rdma/rdma_cma.h>
@@ -12,8 +12,8 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "rdma_receiver.h"
-#include "rdma_util.h"
+#include "rome/rdma/rdma_receiver.h"
+#include "rome/rdma/rdma_util.h"
 #include "rome/rdma/rdma_device.h"
 #include "rome/testutil/status_matcher.h"
 #include "rome/util/status_util.h"

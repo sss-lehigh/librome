@@ -1,4 +1,4 @@
-#include "remote_ptr.h"
+#include "rome/rdma/memory_pool/remote_ptr.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

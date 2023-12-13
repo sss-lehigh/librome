@@ -92,7 +92,7 @@ class RdmaBrokerTest : public ::testing::Test {
   void SetUp() {
     ROME_INIT_LOG();
     auto devices = RdmaDevice::GetAvailableDevices();
-    ROME_ASSERT(devices.ok() && !devices->empty(), devices.status().message());
+    ROME_ASSERT(devices.ok() && !devices->empty(), devices.status().message().data());
 
     // Listen on all devices
     broker_ = RdmaBroker::Create(std::nullopt, std::nullopt, &receiver_);

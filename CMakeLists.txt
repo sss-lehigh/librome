@@ -9,7 +9,7 @@ project(Rome LANGUAGES CXX VERSION 0.0.0)
 option(HAVE_RDMA_CARD OFF "Set HAVE_RDMA_CARD if you have a mlnx card to test with")
 option(USE_CUDA OFF "Set USE_CUDA if you want to run tests for NVCC")
 option(BUILD_DOCS OFF "Set to build documentation")
-set(LOG_LEVEL "INFO" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
+set(LOG_LEVEL "ERROR" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
 set(CXX_STANDARD 20 CACHE STRING "Uses C++20 or 23")
 
 #######################################################################################

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "gmock/gmock-matchers.h"
-#include "status_matcher.h"
 #include "absl/strings/str_cat.h"
-#include "rome/colosseum/stream.h"
+#include "gmock/gmock-matchers.h"
+#include "rome/colosseum/streams/stream.h"
+#include "rome/testutil/status_matcher.h"
 
 namespace testutil {
 

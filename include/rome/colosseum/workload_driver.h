@@ -9,7 +9,7 @@
 #include "protos/colosseum.pb.h"
 #include "rome/colosseum/client_adaptor.h"
 #include "rome/colosseum/qps_controller.h"
-#include "rome/colosseum/stream.h"
+#include "rome/colosseum/streams/stream.h"
 #include "rome/metrics/counter.h"
 #include "rome/metrics/metric.h"
 #include "rome/metrics/stopwatch.h"
@@ -18,19 +18,19 @@
 
 namespace rome {
 
-/// For reference, a `WorkloadDriver` with a simple `MappedStream` (i.e.,
-/// consisting of one sub-stream) can achieve roughly 1M QPS. This was measured
-/// using a client adaptor that does nothing. As the number of constituent
-/// streams increases, we expect the maximum throughput to decrease but it is not
-/// likely to be the limiting factor in performance.
+// For reference, a `WorkloadDriver` with a simple `MappedStream` (i.e.,
+// consisting of one sub-stream) can achieve roughly 1M QPS. This was measured
+// using a client adaptor that does nothing. As the number of constituent
+// streams increases, we expect the maximum throughput to decrease but it is not
+// likely to be the limiting factor in performance.
 template <typename OpType>
 class WorkloadDriver {
  public:
   ~WorkloadDriver();
 
-  /// Creates a new `WorkloadDriver` from the constiuent client adaptor and
-  /// stream. If not `nullptr`, the QPS controller is used to limit the
-  /// throughput of operations fed to the client.
+  // Creates a new `WorkloadDriver` from the constiuent client adaptor and
+  // stream. If not `nullptr`, the QPS controller is used to limit the
+  // throughput of operations fed to the client.
   static std::unique_ptr<WorkloadDriver> Create(
       std::unique_ptr<ClientAdaptor<OpType>> client,
       std::unique_ptr<Stream<OpType>> stream, QpsController* qps_controller,
@@ -41,15 +41,15 @@ class WorkloadDriver {
         qps_sampling_rate.value_or(std::chrono::milliseconds(0))));
   }
 
-  /// Calls the client's `Start` method before starting the workload driver,
-  /// returning its error if there is one. Operations are then pulled from
-  /// `stream_` and passed to `client_`'s `Apply` method. The client will handle
-  /// operations until either the given stream is exhausted or `Stop` is called.
+  // Calls the client's `Start` method before starting the workload driver,
+  // returning its error if there is one. Operations are then pulled from
+  // `stream_` and passed to `client_`'s `Apply` method. The client will handle
+  // operations until either the given stream is exhausted or `Stop` is called.
   absl::Status Start();
 
-  /// Stops the workload driver so no new requests are passed to the client.
-  /// Then, the client's `Stop` method is called so that any pending operations
-  /// can be finalized.
+  // Stops the workload driver so no new requests are passed to the client.
+  // Then, the client's `Stop` method is called so that any pending operations
+  // can be finalized.
   absl::Status Stop();
 
   metrics::Stopwatch* GetStopwatch() { return stopwatch_.get(); }
@@ -80,6 +80,7 @@ class WorkloadDriver {
                  QpsController* qps_controller,
                  std::chrono::milliseconds qps_sampling_rate)
       : terminated_(false),
+        running_(false),
         client_(std::move(client)),
         stream_(std::move(stream)),
         qps_controller_(qps_controller),
@@ -92,6 +93,7 @@ class WorkloadDriver {
         lat_summary_("sampled_lat", "ns", 1000) {}
 
   std::atomic<bool> terminated_;
+  std::atomic<bool> running_;
 
   std::unique_ptr<ClientAdaptor<OpType>> client_;
   std::unique_ptr<Stream<OpType>> stream_;
@@ -129,14 +131,13 @@ absl::Status WorkloadDriver<OpType>::Start() {
     return absl::UnavailableError(
         "Cannot restart a terminated workload driver.");
   }
-  auto client_status = client_->Start();
-  if (!client_status.ok()) return client_status;
 
-  stopwatch_ = metrics::Stopwatch::Create("driver_stopwatch");
   auto task =
       std::packaged_task<absl::Status()>(std::bind(&WorkloadDriver::Run, this));
   run_status_ = task.get_future();
   run_thread_ = std::make_unique<std::thread>(std::move(task));
+  while (!running_)
+    ;
   return absl::OkStatus();
 }
 
@@ -151,19 +152,17 @@ absl::Status WorkloadDriver<OpType>::Stop() {
   terminated_ = true;
   run_status_.wait();
 
-  // The client's `Stop` may block while there are any outstanding operations.
-  // After this call, it is assumed that the client is no longer active.
-  auto client_status = client_->Stop();
-  stopwatch_->Stop();
-
   if (!run_status_.get().ok()) return run_status_.get();
-  if (!client_status.ok()) return client_status;
   return absl::OkStatus();
 }
 
 template <typename OpType>
 absl::Status WorkloadDriver<OpType>::Run() {
-  absl::Status status = absl::OkStatus();
+  auto status = client_->Start();
+  if (!status.ok()) return status;
+  stopwatch_ = metrics::Stopwatch::Create("driver_stopwatch");
+  running_ = true;
+
   while (!terminated_) {
     if (qps_controller_ != nullptr) {
       qps_controller_->Wait();
@@ -182,18 +181,18 @@ absl::Status WorkloadDriver<OpType>::Run() {
         curr_lap.GetRuntimeNanoseconds());
 
     auto client_status = client_->Apply(next_op.value());
+    if (curr_lap_ms > lat_sampling_rate_) {
+      lat_summary_
+          << (stopwatch_->GetLapSplit().GetRuntimeNanoseconds().count() -
+              curr_lap.GetRuntimeNanoseconds().count());
+    }
+
     if (!client_status.ok()) {
       status = client_status;
       break;
     }
 
     ++ops_;
-
-    if (curr_lap_ms > lat_sampling_rate_) {
-      lat_summary_
-          << (stopwatch_->GetLapSplit().GetRuntimeNanoseconds().count() -
-              curr_lap.GetRuntimeNanoseconds().count());
-    }
 
     if (curr_lap_ms > qps_sampling_rate_) {
       auto curr_ops = ops_.GetCounter();
@@ -204,6 +203,9 @@ absl::Status WorkloadDriver<OpType>::Run() {
       prev_ops_ = curr_ops;
     }
   }
+  // The client's `Stop` may block while there are any outstanding operations.
+  // After this call, it is assumed that the client is no longer active.
+  status = client_->Stop();
   stopwatch_->Stop();
   return status;
 }

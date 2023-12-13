@@ -20,10 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-
 #include <coroutine>
-//#include <experimental/coroutine>
-
 #include <iterator>
 #include <string>
 #include <string_view>
@@ -38,7 +35,7 @@
 #include "rome/util/coroutine.h"
 #include "rome/util/status_util.h"
 
-namespace rome {
+namespace rome::rdma {
 
 using ::util::Coro;
 using ::util::RoundRobinScheduler;
@@ -84,7 +81,7 @@ class RdmaBroker {
   uint16_t port_;
 
   // Flag to indicate that the worker thread should terminate.
-  volatile bool terminate_;
+  std::atomic<bool> terminate_;
 
   // The working thread that listens and responds to incoming messages.
   struct thread_deleter {

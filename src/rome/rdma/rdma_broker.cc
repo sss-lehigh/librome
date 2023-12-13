@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <cstring>
 #include <coroutine>
+#include <ratio>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -36,9 +37,8 @@
 #include "rome/logging/logging.h"
 #include "rome/util/coroutine.h"
 #include "rome/util/status_util.h"
-#include "rome/logging/logging.h"
 
-namespace rome {
+namespace rome::rdma {
 
 using ::util::Coro;
 using ::util::InternalErrorBuilder;
@@ -61,7 +61,8 @@ std::unique_ptr<RdmaBroker> RdmaBroker::Create(
   if (status.ok()) {
     return std::unique_ptr<RdmaBroker>(broker);
   } else {
-    ROME_ERROR(status.ToString());
+    ROME_ERROR("{}: {}:{}", status.ToString(), address.value_or(""),
+               port.value_or(-1));
     return nullptr;
   }
 }
@@ -142,6 +143,7 @@ Coro RdmaBroker::HandleConnectionRequests() {
   int ret;
   while (true) {
     do {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       // If we are shutting down, and there are no connections left then we
       // should finish.
       if (terminate_) co_return;
@@ -217,4 +219,4 @@ void RdmaBroker::Run() {
   ROME_TRACE("Finished: {}", status_.ok() ? "Ok" : status_.message());
 }
 
-}  // namespace rome
+}  // namespace rome::rdma

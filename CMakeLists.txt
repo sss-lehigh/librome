@@ -9,7 +9,7 @@ project(Rome LANGUAGES CXX VERSION 0.0.0)
 option(HAVE_RDMA_CARD OFF "Set HAVE_RDMA_CARD if you have a mlnx card to test with")
 option(USE_CUDA OFF "Set USE_CUDA if you want to run tests for NVCC")
 option(BUILD_DOCS OFF "Set to build documentation")
-set(LOG_LEVEL "INFO" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
+set(LOG_LEVEL "ERROR" CACHE STRING "Log level options include TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, and OFF")
 set(CXX_STANDARD 20 CACHE STRING "Uses C++20 or 23")
 
 #######################################################################################
@@ -85,10 +85,13 @@ enable_testing()
 add_subdirectory(protos)
 
 add_library(rome SHARED
+            src/rome/metrics/stopwatch.cc
             src/rome/rdma/rdma_broker.cc  
             src/rome/rdma/rdma_device.cc  
             src/rome/rdma/rdma_memory.cc
-            src/rome/util/thread_pool.cc)
+            src/rome/util/thread_pool.cc
+            src/rome/rdma/channel/rdma_channel.cc
+            src/rome/rdma/channel/sync_accessor.cc)
 add_library(rome::rome ALIAS rome)
 target_include_directories(rome PUBLIC 
                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

@@ -18,7 +18,7 @@
 #include "rome/testutil/status_matcher.h"
 #include "rome/util/status_util.h"
 
-namespace rome {
+namespace rome::rdma {
 namespace {
 
 using ::util::InternalErrorBuilder;

@@ -6,7 +6,7 @@
 #include "rome/logging/logging.h"
 #include "rome/testutil/status_matcher.h"
 
-namespace rome {
+namespace rome::rdma {
 namespace {
 
 class RdmaMemoryTest : public ::testing::Test {

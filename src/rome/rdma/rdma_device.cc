@@ -8,7 +8,7 @@
 #include "rome/logging/logging.h"
 #include "rome/util/status_util.h"
 
-namespace rome {
+namespace rome::rdma {
 
 using ::util::AlreadyExistsErrorBuilder;
 using ::util::NotFoundErrorBuilder;

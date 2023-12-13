@@ -1,4 +1,4 @@
-#include "sync_accessor.h"
+#include "rome/rdma/channel/sync_accessor.h"
 
 #include <asm-generic/errno-base.h>
 #include <infiniband/verbs.h>
@@ -7,7 +7,7 @@
 #include "rome/rdma/rdma_util.h"
 #include "rome/util/status_util.h"
 
-namespace rome {
+namespace rome::rdma {
 
 using ::util::InternalErrorBuilder;
 

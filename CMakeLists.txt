@@ -26,7 +26,11 @@ if(${USE_CUDA})
     set(CMAKE_CUDA_STANDARD ${CXX_STANDARD})
     add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
     message(STATUS "Using host compiler - ${CMAKE_CUDA_HOST_COMPILER}")
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-Wall>)
 endif()
+
+add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wall>)
+add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>)
 
 #######################################################################################
 # find packages
